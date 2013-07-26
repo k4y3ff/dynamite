@@ -1,3 +1,6 @@
+import akka.actor.ActorDSL._
+import akka.actor.ActorSystem
+
 import java.net.ServerSocket
 import java.io.PrintStream
 import java.net.Socket
@@ -7,6 +10,8 @@ import collection.mutable
 
 object server1 {
   
+  implicit val system = ActorSystem("coodinatoracceptor")
+
   val kvstore = collection.mutable.Map[String, String]()
   
   def main(args: Array[String]): Unit = {
@@ -15,18 +20,41 @@ object server1 {
     val coordinators = new mutable.ArrayBuffer[Coordinator] with mutable.SynchronizedBuffer[Coordinator] {}
     val ss = new ServerSocket(4010)
     
-    actors.Actor.actor {
-      while(true) {
-        val sock = ss.accept()
-        val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-        val ps = new PrintStream(sock.getOutputStream())
-        
-        // This is what happens whenever a new client connects with the server.
-        actors.Actor.actor {
-          coordinators += Coordinator(sock, is, ps, (coordinators.length + 1).toString)
+    val coordinatorAcceptor = actor(system)(new Act {
+      become {
+        case true => {
+          while(true) {
+            val sock = ss.accept()
+            val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+            val ps = new PrintStream(sock.getOutputStream())
+
+            // This is what happens whenever a new coordinator connects with the server.
+            val coordinatorAdder = actor(system)(new Act {
+              become {
+                case true => coordinators += Coordinator(sock, is, ps, (coordinators.length + 1).toString)
+              }
+            })
+
+            coordinatorAdder ! true
+          }
         }
       }
-    }
+    })
+
+    coordinatorAcceptor ! true
+
+    // actors.Actor.actor {
+    //   while(true) {
+    //     val sock = ss.accept()
+    //     val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+    //     val ps = new PrintStream(sock.getOutputStream())
+        
+    //     // This is what happens whenever a new client connects with the server.
+    //     actors.Actor.actor {
+    //       coordinators += Coordinator(sock, is, ps, (coordinators.length + 1).toString)
+    //     }
+    //   }
+    // }
     
     // Things to do whenever a client sends something to the server.
     while(true) {

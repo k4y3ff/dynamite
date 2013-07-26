@@ -38,7 +38,7 @@ object controller {
 	  	}
 	  })
 
-	  	clientAcceptor ! true
+	  clientAcceptor ! true
 	  
 	  // This is what happens whenever a client sends something to the coordinator.
 	  while(true) {
