@@ -8,7 +8,7 @@ object hashRing {
 	val serverLocations = collection.mutable.Map[Integer, String]() // Map of locations on the ring to servers
 	val servers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] // Can I just make this a regular array?
 
-	// Adds a new server node to the hash ring.
+	// Adds a new server node to the hash ring
 	def addServer(serverID:Integer, port:Integer): Unit = {
 		val random = new scala.util.Random
 
@@ -24,6 +24,9 @@ object hashRing {
 		serverLocations(position) = serverID // Adds the server ID to the Map of ring positions to IDs
 	}
 
+	// Adds a new key-value pair to the hash ring
+	def addPair(key:String, value:String) {
 
+	}
 
 }
