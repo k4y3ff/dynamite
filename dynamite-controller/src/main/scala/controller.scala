@@ -1,0 +1,75 @@
+import akka.actor.ActorDSL._
+import akka.actor.ActorSystem
+
+import java.net.ServerSocket
+import java.io.PrintStream
+import java.net.Socket
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import collection.mutable
+
+object controller {
+	def main(args: Array[String]): Unit = {
+	  
+	  case class Client(sock:Socket, is:BufferedReader, ps:PrintStream, name:String)
+	  
+	  implicit val system = ActorSystem("clientacceptor")
+
+	  val clients = new mutable.ArrayBuffer[Client] with mutable.SynchronizedBuffer[Client] {}
+	  val ss = new ServerSocket(4343)
+
+	  val clientAcceptor = actor(system)(new Act {
+	  	become {
+	  		case true => {
+	  			while(true) {
+	  				val sock = ss.accept()
+	  				val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+	  				val ps = new PrintStream(sock.getOutputStream())
+
+	  				val clientAdder = actor(system)(new Act {
+	  					become {
+	  						case true => clients += Client(sock, is, ps, (clients.length + 1).toString)
+	  					}
+	  				})
+
+	  				clientAdder ! true
+	  			}
+	  		}
+	  	}
+	  })
+
+	  	clientAcceptor ! true
+
+	  // actors.Actor.actor {
+	  //   while(true) {
+	  //     val sock = ss.accept()
+	  //     val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+	  //     val ps = new PrintStream(sock.getOutputStream())
+	      
+	  //     // This is what happens whenever a new client connects with the server.
+	  //     actors.Actor.actor {
+	  //       clients += Client(sock, is, ps, (clients.length + 1).toString)
+	  //     }
+	  //   }
+	  // }
+	  
+	  // This is what happens whenever a client sends something to the coordinator.
+	  while(true) {
+	    for(client <- clients) {
+	      if(client.is.ready) {
+	        val request = client.is.readLine
+	        client.ps.println(switchboard(request))
+	      }
+	    }
+	  }
+	}
+	
+	// Accepts client request as a String, splits request into tokens, calls appropriate
+	// function on database, returns result of request.
+	def switchboard(request:String): String = {	  
+	  val tokens = request.split(" ")
+	  val command = tokens(0)
+	  
+	  "This doesn't return anything yet." 
+	}
+}
