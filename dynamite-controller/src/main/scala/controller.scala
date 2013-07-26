@@ -39,19 +39,6 @@ object controller {
 	  })
 
 	  	clientAcceptor ! true
-
-	  // actors.Actor.actor {
-	  //   while(true) {
-	  //     val sock = ss.accept()
-	  //     val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-	  //     val ps = new PrintStream(sock.getOutputStream())
-	      
-	  //     // This is what happens whenever a new client connects with the server.
-	  //     actors.Actor.actor {
-	  //       clients += Client(sock, is, ps, (clients.length + 1).toString)
-	  //     }
-	  //   }
-	  // }
 	  
 	  // This is what happens whenever a client sends something to the coordinator.
 	  while(true) {

@@ -34,17 +34,6 @@ object client {
     })
 
     outputer ! true
-
-    // actors.Actor.actor {
-    //   while(flag) {
-    //     if(is.ready) {
-    //       val output = is.readLine
-    //       println(output)
-    //     }
-    //     Thread.sleep(100)
-    //   }
-    // }
-
     
     while(flag) {
       val input = readLine
