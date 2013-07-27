@@ -13,9 +13,9 @@ object hashRing {
 
 	val random = new scala.util.Random
 	
-	val kvLocations = collection.mutable.Map[String, Integer]
-	var locations : Integer = Set()
-	val serverLocations = collection.mutable.Map[Integer, String]() // Map of locations on the ring to servers
+
+	val locations = Set.empty[Double]
+	val serverLocations = collection.mutable.Map[Double, Int]() // Map of locations on the ring to servers
 	val servers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] // Can I just make this a regular array?
 
 	// Adds a new server node to the hash ring
@@ -24,7 +24,7 @@ object hashRing {
 		var serverPosition = random.nextDouble() // Generates a random (Double) position on the hash ring from (0, 1)
 
 		// So long as the server position is not unique (i.e. is occupied by another server), generates a new position
-		while locations(serverPosition) == true { 
+		while ((locations contains serverPosition) == true) { 
 			serverPosition = random.nextDouble()
 		}
 
@@ -32,17 +32,19 @@ object hashRing {
 		serverLocations(serverPosition) = serverID // Adds the server ID to the Map of ring positions to IDs
 	}
 
-	// Adds a new key-value pair to the hash ring
+	// Generates a random position on the hash ring for a key-value pair, iterates over the Map of server locations, 
+	// and returns the ID number of the server who is closest (in a clockwise direction) to the key-value pair.
 	def addPair(key:String, value:String) {
-		val kvPosition = random.nextDouble()
+		val kvLocation = random.nextDouble() // Generates a random position on the hash ring for the key-value pair
+		
+		
+		def clockwiseFinder(kvPosition:Double): Integer = {
+			for((serverLocation, serverID) <- serverLocations) {
+				if(serverLocation >= kvLocation) return serverID
+			}
 
-		while locations(kvPosition) == true {
-			kvPosition = random.nextDouble()
+			return 0
 		}
-
-
-
-
 
 		/*
 		/
