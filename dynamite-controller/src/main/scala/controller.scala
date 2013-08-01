@@ -1,3 +1,5 @@
+package controller
+
 import akka.actor.ActorDSL._
 import akka.actor.ActorSystem
 
@@ -57,6 +59,37 @@ object controller {
 	  val tokens = request.split(" ")
 	  val command = tokens(0)
 	  
-	  "This doesn't return anything yet." 
+	  // else if(command == "put")
+	  // else if(command == "get")
+
+	  def callController(command:String): Boolean = command match {
+	  	case "addServer" 	=> hashRing.addServerToRing(tokens(1))
+	  	case "set"			=> hashRing.addPairToRing(tokens(1), tokens(2))
+	  	case _				=> false
+	  }
+
+	  callController(command).toString
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
