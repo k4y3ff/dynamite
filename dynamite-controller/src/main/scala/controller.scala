@@ -58,17 +58,16 @@ object controller {
 	def switchboard(request:String): String = {	  
 	  val tokens = request.split(" ")
 	  val command = tokens(0)
-	  
-	  // else if(command == "put")
-	  // else if(command == "get")
 
-	  def callController(command:String): Boolean = command match {
-	  	case "addServer" 	=> hashRing.addServerToRing(tokens(1))
-	  	case "set"			=> hashRing.addPairToRing(tokens(1), tokens(2))
-	  	case _				=> false
+	  def callController(command:String): String = command match {
+	  	case "addServer" 	=> hashRing.addServerToRing(tokens(1)).toString
+	  	//case "get"			=> hashRing.getValue(tokens(1)).toString
+	  	case "listServers"	=> hashRing.listServers().toString
+	  	case "set"			=> hashRing.addPairToRing(tokens(1), tokens(2)).toString
+	  	case _				=> "false"
 	  }
 
-	  callController(command).toString
+	  callController(command)
 	}
 }
 

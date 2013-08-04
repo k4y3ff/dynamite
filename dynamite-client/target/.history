@@ -11,3 +11,6 @@ compile
 run
 compile
 run
+addServer 4000
+run
+compile

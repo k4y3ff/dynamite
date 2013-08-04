@@ -55,6 +55,9 @@ object server0 {
     }
   }
   
+  // Removes a single KVP from kvStore
+  def delete(tokens:Array[String]): Unit = kvStore.remove(tokens(0))
+
   // Returns a value, given a key
   def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "No key with that name.")
   
@@ -68,6 +71,7 @@ object server0 {
     val tokens = request.split(" ")
     val command = tokens(0)
     command match {
+      case "delete" => delete(tokens.slice(1,3)); return "true"
       case "get"		=> return get(tokens.slice(1,2))
       case "set"		=> return set(tokens.slice(1,3))
       case other		=> return "Command not found."

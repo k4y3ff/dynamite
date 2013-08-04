@@ -29,11 +29,13 @@ object hashRing {
 	
 	case class Server(serverID:Int, port:Int, position:Double)
 
-	val random = new scala.util.Random
+	val random = new scala.util.Random // Instantiation for random number generator
+	val highestRandomValue = 1 // Highest random value the can be generated
 
-	val locations = Set.empty[Double]
-	val continuum = new TreeMap[Double, Server]()
-	val serverLocations = collection.mutable.Map[Double, Int]() // Map of locations on the ring to servers
+	val locations = Set.empty[Double] // Set that contains locations of servers on the hash ring; allows for fast lookup
+	val keyContinuum = new TreeMap[Double, String] // Ordered map of locations -> keys on the hash ring; underlying structure is red-black tree
+	val serverContinuum = new TreeMap[Double, Server] // Ordered map of locations -> servers on the hash ring; underlying structure is red-black tree
+	//val serverLocations = collection.mutable.Map[Double, Int]() // Map of locations on the ring to servers
 	val servers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] // Can I just make this a regular array?
 
 	// TO DO: 
@@ -50,23 +52,21 @@ object hashRing {
 		}
 
 		val server = Server(serverID.toInt, port.toInt, serverPosition)
-		continuum(serverPosition) = server
+		serverContinuum(serverPosition) = server
+
+		migrateKVPs(serverPosition)
 
 		true
-		
-		// OLD CODE
-		// servers += Server(serverID, port, serverPosition) // Adds the server to the list of servers
-		// continuum(serverPosition) = serverID // Adds the server ID to the Map of ring positions to IDs
 	}
 
 	// Generates a random position on the hash ring for a key-value pair, iterates over the Map of server locations, 
 	// and returns the ID number of the server who is closest (in a clockwise direction) to the key-value pair.
 	def addPairToRing(key:String, value:String): Boolean = {
-		val kvLocation = random.nextDouble() // Generates a random position on the hash ring for the key-value pair
-		var nearestServerLocation = continuum.ceilingKey(kvLocation)
-		if (nearestServerLocation == null) nearestServerLocation = continuum.firstKey
+		val kvPosition = random.nextDouble() // Generates a random position on the hash ring for the key-value pair
+		var nearestServerLocation = serverContinuum.ceilingKey(kvPosition)
+		if (nearestServerLocation == null) nearestServerLocation = serverContinuum.firstKey
 
-		val nearestServer = continuum(nearestServerLocation)
+		val nearestServer = serverContinuum(nearestServerLocation)
 		
 		val port = nearestServer.port
 		val sock = new Socket(host, port)
@@ -77,7 +77,106 @@ object hashRing {
 		val output = is.readLine // READLINE IS A BLOCKING CALL. THIS IS BAD, BAD CODE.
 		sock.close()
 
+		keyContinuum(kvPosition) = key
+
 		true
+	}
+
+	// Returns list of servers and their locations on the ring
+	def listServers(): TreeMap[Double, Server] = serverContinuum
+	
+	def migrateKVPs(newServerPosition:Double): Unit = {
+		if(serverContinuum.size > 0) {
+
+			// Determine location of previous node
+			var previousServerPosition = serverContinuum.lowerKey(newServerPosition)
+
+			// Determine location of next node
+			var nextServerPosition = serverContinuum.higherKey(newServerPosition)
+
+			// Case 1: Location of previous location == null:
+			if (previousServerPosition == null) {
+				// Create a submap of all keys between the position of the last server (exclusive) and the end of the keyContinuum (inclusive)
+				val migratedKeys1 = keyContinuum.subMap(serverContinuum.lastKey, false, highestRandomValue, true)
+				// Create a submap of all keys between the beginning of the keyContinuum (inclusive) and the position of the new server (inclusive)
+				val migratedKeys2 = keyContinuum.subMap(0, false, newServerPosition, true)
+
+				// Open connection to new server
+				val newServerPort = serverContinuum(newServerPosition).port
+				val newServerSock = new Socket(host, newServerPort)
+				val newServerPS = new PrintStream(newServerSock.getOutputStream())
+
+				// Open connection to old server that the keys will be moved from
+				val oldServerPort = serverContinuum(nextServerPosition).port
+				val oldServerSock = new Socket(host, oldServerPort)
+				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
+
+				// Iterate over first submap, adding each KVP to new server, then removing from old server
+				migratedKeys1.foreach(pair => {
+					val key = pair._1
+					val value = oldServerPS.println("get " + pair._1)
+					newServerPS.println("set " + key + " " + value)
+					oldServerPS.println("delete " + key)
+				})
+
+				// Iterate over second submap, adding each KVP to new server, then removing from old server
+				migratedKeys2.foreach(pair => {
+					val key = pair._1
+					val value = oldServerPS.println("get " + pair._1)
+					newServerPS.println("set " + key + " " + value)
+					oldServerPS.println("delete " + key)
+				})
+
+			}
+
+			// Case 2: Location of next location == null:
+			else if (nextServerPosition == null) {
+
+				// Create a submap of all keys between the position of the preceding server and the location of the new server
+				val migratedKeys = keyContinuum.subMap(previousServerPosition, false, newServerPosition, true)
+
+				// Open connection to new server
+				val newServerPort = serverContinuum(newServerPosition).port
+				val newServerSock = new Socket(host, newServerPort)
+				val newServerPS = new PrintStream(newServerSock.getOutputStream())
+
+				// Open connection to old server that the keys will be moved from
+				val oldServerPort = serverContinuum(serverContinuum.firstKey).port
+				val oldServerSock = new Socket(host, oldServerPort)
+				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
+
+				// Iterate over submap, adding each KVP to new server, then removing from oldserver
+				migratedKeys.foreach(pair => {
+					val key = pair._1
+					val value = oldServerPS.println("get " + pair._1)
+					newServerPS.println("set " + key + " " + value)
+					oldServerPS.println("delete " + key)
+				})
+			}
+
+			// Case 3
+			else {
+				val migratedKeys = keyContinuum.subMap(previousServerPosition, false, newServerPosition, true)
+
+				// Open connection to new server
+				val newServerPort = serverContinuum(newServerPosition).port
+				val newServerSock = new Socket(host, newServerPort)
+				val newServerPS = new PrintStream(newServerSock.getOutputStream())
+
+				// Open connection to old server that the keys will be moved from
+				val oldServerPort = serverContinuum(serverContinuum.firstKey).port
+				val oldServerSock = new Socket(host, oldServerPort)
+				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
+
+				// Iterate over submap, adding each KVP to new server, then removing from oldserver
+				migratedKeys.foreach(pair => {
+					val key = pair._1
+					val value = oldServerPS.println("get " + pair._1)
+					newServerPS.println("set " + key + " " + value)
+					oldServerPS.println("delete " + key)
+				})
+			}
+		}
 	}
 	
 
