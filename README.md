@@ -2,10 +2,9 @@ dynamite
 =========
 
 ## To Do
-1. Connect server1 to the coordinator.
-2. Add a second server.
-3. Add a third server.
-4. Write a consistent hashing algorithm!
+1. Write get function for coordinator.
+2. Fix error: https://gist.github.com/kpfell/e72a037403bfdd725560
+3. Write replicant servers.
 
 ## Ports
 - Client
@@ -13,7 +12,10 @@ dynamite
 	- Outgoing: 4343
 - Controller
 	- Incoming: 4343
-	- Outgoing: --
+	- Outgoing: ++
+- Server 0
+	- Incoming: 4000
+	- Outgoing: 4343
 - Server 1
 	- Incoming: 4010
-	- Outgoing: --
+	- Outgoing: 4343
