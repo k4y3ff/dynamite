@@ -12,7 +12,7 @@ object server1 {
   
   implicit val system = ActorSystem("coodinatoracceptor")
 
-  val kvstore = collection.mutable.Map[String, String]()
+  val kvStore = collection.mutable.Map[String, String]()
   
   def main(args: Array[String]): Unit = {
     case class Coordinator(sock:Socket, is:BufferedReader, ps:PrintStream, name:String)
@@ -42,19 +42,7 @@ object server1 {
     })
 
     coordinatorAcceptor ! true
-
-    // actors.Actor.actor {
-    //   while(true) {
-    //     val sock = ss.accept()
-    //     val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-    //     val ps = new PrintStream(sock.getOutputStream())
-        
-    //     // This is what happens whenever a new client connects with the server.
-    //     actors.Actor.actor {
-    //       coordinators += Coordinator(sock, is, ps, (coordinators.length + 1).toString)
-    //     }
-    //   }
-    // }
+    
     
     // Things to do whenever a client sends something to the server.
     while(true) {
@@ -67,12 +55,15 @@ object server1 {
     }
   }
   
+  // Removes a single KVP from kvStore
+  def delete(tokens:Array[String]): Unit = kvStore.remove(tokens(0))
+
   // Returns a value, given a key
-  def get(tokens:Array[String]): String = kvstore getOrElse (tokens(0), "No key with that name.")
+  def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "No key with that name.")
   
-  // Adds a new key-value pair to kvstore
+  // Adds a new key-value pair to kvStore
   def set(tokens:Array[String]): String = {
-    kvstore(tokens(0)) = tokens(1)
+    kvStore(tokens(0)) = tokens(1)
     "Key '" + tokens(0) + "' assigned value '" + tokens(1) + "'."
   }
   
@@ -80,6 +71,7 @@ object server1 {
     val tokens = request.split(" ")
     val command = tokens(0)
     command match {
+      case "delete" => delete(tokens.slice(1,3)); return "true"
       case "get"		=> return get(tokens.slice(1,2))
       case "set"		=> return set(tokens.slice(1,3))
       case other		=> return "Command not found."

@@ -27,7 +27,7 @@ object hashRing {
 	val host = "localhost"
 
 	
-	case class Server(serverID:Int, port:Int, position:Double)
+	case class Server(port:Int, position:Double)
 
 	val random = new scala.util.Random // Instantiation for random number generator
 	val highestRandomValue = 1 // Highest random value the can be generated
@@ -43,7 +43,6 @@ object hashRing {
 	//
 	// Adds a new server node to the hash ring
 	def addServerToRing(port:String): Boolean = {
-		val serverID = servers.length // Labels the new server with a unique ID number
 		var serverPosition = random.nextDouble() // Generates a random (Double) position on the hash ring from (0, 1)
 
 		// So long as the server position is not unique (i.e. is occupied by another server), generates a new position
@@ -51,7 +50,7 @@ object hashRing {
 			serverPosition = random.nextDouble()
 		}
 
-		val server = Server(serverID.toInt, port.toInt, serverPosition)
+		val server = Server(port.toInt, serverPosition)
 		serverContinuum(serverPosition) = server
 
 		migrateKVPs(serverPosition)
