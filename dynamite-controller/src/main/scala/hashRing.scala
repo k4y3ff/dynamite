@@ -14,12 +14,7 @@ import java.io.InputStreamReader
 
 /*
 / NOTE:
-/ This hash ring assumes that you distribute ALL servers around the ring first, THEN distribute your key-value pairs.
-/ If you add a new server after having distributed key-value pairs, the distribution will not be "even."
-/ tl;dr Add ALL of your servers before you anything else, or things will hit the fan.
-/
-/ ALSO:
-/ This coordinator/hash ring very likely doesn't work for multiple clients. :(
+/ This coordinator/hash ring doesn't work for multiple clients. :(
 */
 
 object hashRing {
@@ -38,9 +33,6 @@ object hashRing {
 	//val serverLocations = collection.mutable.Map[Double, Int]() // Map of locations on the ring to servers
 	val servers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] // Can I just make this a regular array?
 
-	// TO DO: 
-	// 1. Fix so that adding a new server after KVPs have been distributed *doesn't* break the database.
-	//
 	// Adds a new server node to the hash ring
 	def addServerToRing(port:String): Boolean = {
 		var serverPosition = random.nextDouble() // Generates a random (Double) position on the hash ring from (0, 1)
