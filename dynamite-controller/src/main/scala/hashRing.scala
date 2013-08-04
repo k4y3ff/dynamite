@@ -27,10 +27,8 @@ object hashRing {
 	val random = new scala.util.Random // Instantiation for random number generator
 	val highestRandomValue = 1 // Highest random value the can be generated; manually set, does not affect actual range random numbers generated
 
-	val locations = Set.empty[Double] // Set that contains locations of servers on the hash ring; allows for fast lookup
 	val keyContinuum = new TreeMap[Double, String] // Ordered map of locations -> keys on the hash ring; underlying structure is red-black tree
 	val serverContinuum = new TreeMap[Double, Server] // Ordered map of locations -> servers on the hash ring; underlying structure is red-black tree
-	//val serverLocations = collection.mutable.Map[Double, Int]() // Map of locations on the ring to servers
 	val servers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] // Can I just make this a regular array?
 
 	// Adds a new server node to the hash ring
@@ -38,7 +36,7 @@ object hashRing {
 		var serverPosition = random.nextDouble() // Generates a random (Double) position on the hash ring from (0, 1)
 
 		// So long as the server position is not unique (i.e. is occupied by another server), generates a new position
-		while ((locations contains serverPosition) == true) { 
+		while ((serverContinuum containsKey serverPosition) == true) { 
 			serverPosition = random.nextDouble()
 		}
 
