@@ -25,7 +25,7 @@ object hashRing {
 	case class Server(port:Int, position:Double)
 
 	val random = new scala.util.Random // Instantiation for random number generator
-	val highestRandomValue = 1 // Highest random value the can be generated
+	val highestRandomValue = 1 // Highest random value the can be generated; manually set, does not affect actual range random numbers generated
 
 	val locations = Set.empty[Double] // Set that contains locations of servers on the hash ring; allows for fast lookup
 	val keyContinuum = new TreeMap[Double, String] // Ordered map of locations -> keys on the hash ring; underlying structure is red-black tree
