@@ -67,8 +67,6 @@ object hashRing {
 
 		val nearestServer = serverContinuum(nearestServerLocation)
 
-		//-------------------- SOMETHING BAD IS HAPPENING HERE --------------------
-
 		val port = nearestServer.port
 		val sock = new Socket(host, port)
 		val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
