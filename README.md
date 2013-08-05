@@ -2,9 +2,8 @@ dynamite
 =========
 
 ## To Do
-1. Write get function for coordinator.
-2. Fix error: https://gist.github.com/kpfell/e72a037403bfdd725560
-3. Write replicant servers.
+1. Fix key migration.
+2. Write replicant servers.
 
 ## Ports
 - Client

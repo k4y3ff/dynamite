@@ -59,12 +59,18 @@ object server0 {
   def delete(tokens:Array[String]): Unit = kvStore.remove(tokens(0))
 
   // Returns a value, given a key
-  def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "No key with that name.")
+  def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "false") // This is problematic, because someone might want to store the string "false"
   
   // Adds a new key-value pair to kvStore
   def set(tokens:Array[String]): String = {
     kvStore(tokens(0)) = tokens(1)
+
+    ////////////////////////////////////////////////////////////////
+    println("Added key " + tokens(0) + " and value " + tokens(1)) //
+    ////////////////////////////////////////////////////////////////
+
     "Key '" + tokens(0) + "' assigned value '" + tokens(1) + "'."
+
   }
   
   def switchboard(request:String): String = {
@@ -72,9 +78,9 @@ object server0 {
     val command = tokens(0)
     command match {
       case "delete" => delete(tokens.slice(1,3)); return "true"
-      case "get"		=> return get(tokens.slice(1,2))
-      case "set"		=> return set(tokens.slice(1,3))
-      case other		=> return "Command not found."
+      case "get"    => return get(tokens.slice(1,2))
+      case "set"    => return set(tokens.slice(1,3))
+      case other    => return "Command not found."
     }
     
   }

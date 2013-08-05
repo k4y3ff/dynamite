@@ -61,7 +61,7 @@ object controller {
 
 	  def callController(command:String): String = command match {
 	  	case "addServer" 	=> hashRing.addServerToRing(tokens(1)).toString
-	  	//case "get"			=> hashRing.getValue(tokens(1)).toString
+	  	case "get"			=> hashRing.getValue(tokens(1)).toString
 	  	case "listServers"	=> hashRing.listServers().toString
 	  	case "set"			=> hashRing.addPairToRing(tokens(1), tokens(2)).toString
 	  	case _				=> "false"

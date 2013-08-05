@@ -43,6 +43,10 @@ object hashRing {
 		val server = Server(port.toInt, serverPosition)
 		serverContinuum(serverPosition) = server
 
+		////////////////////////////////////////////////////////
+		println("Added server to position " + serverPosition) // Prints to terminal for debugging
+		////////////////////////////////////////////////////////
+
 		migrateKVPs(serverPosition)
 
 		true
@@ -51,19 +55,32 @@ object hashRing {
 	// Generates a position on the hash ring for a key-value pair, iterates over the Map of server locations, 
 	// and returns the ID number of the server who is closest (in a clockwise direction) to the key-value pair.
 	def addPairToRing(key:String, value:String): Boolean = {
+
 		val kvPosition = MurmurHash3.stringHash(key, seed) // Generates a position on the hash ring for the key-value pair
+		
+		////////////////////////////////////////////////////////////////////
+		println("Generated hash value " + kvPosition + " for key " + key) // Prints to terminal for debugging
+		////////////////////////////////////////////////////////////////////
+
 		var nearestServerLocation = serverContinuum.ceilingKey(kvPosition)
 		if (nearestServerLocation == null) nearestServerLocation = serverContinuum.firstKey
 
 		val nearestServer = serverContinuum(nearestServerLocation)
-		
+
+		//-------------------- SOMETHING BAD IS HAPPENING HERE --------------------
+
 		val port = nearestServer.port
 		val sock = new Socket(host, port)
 		val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
 		val ps = new PrintStream(sock.getOutputStream())
 
+		ps.println("get " + key)
+		var output = is.readLine // READLINE IS A BLOCKING CALL. THIS IS BAD, BAD, BAD.
+
+		if (output != "false") return false // This is problematic, because someone might want to store the string "false"
+
 		ps.println("set " + key + " " + value)
-		val output = is.readLine // READLINE IS A BLOCKING CALL. THIS IS BAD, BAD CODE.
+		output = is.readLine // READLINE IS A BLOCKING CALL. THIS IS BAD, BAD, BAD.
 		sock.close()
 
 		keyContinuum(kvPosition) = key
@@ -71,11 +88,32 @@ object hashRing {
 		true
 	}
 
+	def getValue(key:String): String = {
+		val keyPosition = MurmurHash3.stringHash(key, seed)
+		var serverPosition = serverContinuum.higherKey(keyPosition)
+		if (serverPosition == null) serverPosition = serverContinuum.firstKey
+
+		val serverPort = serverContinuum(serverPosition).port
+		val serverSock = new Socket(host, serverPort)
+		val serverPS = new PrintStream(serverSock.getOutputStream())
+		val is = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
+
+		serverPS.println("get " + key)
+		val value = is.readLine // READLINE IS A BLOCKING CALL. THIS IS BAD, BAD, BAD.
+		serverSock.close()
+
+		value
+	}
+
 	// Returns list of servers and their locations on the ring
 	def listServers(): TreeMap[Integer, Server] = serverContinuum
 	
 	def migrateKVPs(newServerPosition:Integer): Unit = {
 		if(serverContinuum.size > 1) {
+
+			///////////////////////////////////////////////////////
+			println(serverContinuum.size + " servers detected.") // Prints to terminal for debugging
+			///////////////////////////////////////////////////////
 
 			// Determine location of previous node
 			var previousServerPosition = serverContinuum.lowerKey(newServerPosition)
@@ -116,6 +154,8 @@ object hashRing {
 					oldServerPS.println("delete " + key)
 				})
 
+				newServerSock.close()
+				oldServerSock.close()
 			}
 
 			// Case 2: Location of next location == null:
@@ -141,6 +181,9 @@ object hashRing {
 					newServerPS.println("set " + key + " " + value)
 					oldServerPS.println("delete " + key)
 				})
+
+				newServerSock.close()
+				oldServerSock.close()
 			}
 
 			// Case 3
@@ -164,6 +207,9 @@ object hashRing {
 					newServerPS.println("set " + key + " " + value)
 					oldServerPS.println("delete " + key)
 				})
+
+				newServerSock.close()
+				oldServerSock.close()
 			}
 		}
 	}
