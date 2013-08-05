@@ -12,6 +12,8 @@ import java.io.BufferedReader
 import java.io.PrintStream
 import java.io.InputStreamReader
 
+import scala.util.hashing.MurmurHash3
+
 /*
 / NOTE:
 / This coordinator/hash ring doesn't work for multiple clients. :(
@@ -21,23 +23,21 @@ object hashRing {
 
 	val host = "localhost"
 
+	case class Server(port:Int, position:Integer)
+
+	val seed = 1234567890 // Manually set seed value used to hash strings with MurmurHash 3
 	
-	case class Server(port:Int, position:Double)
-
-	val random = new scala.util.Random // Instantiation for random number generator
-	val highestRandomValue = 1 // Highest random value the can be generated; manually set, does not affect actual range random numbers generated
-
-	val keyContinuum = new TreeMap[Double, String] // Ordered map of locations -> keys on the hash ring; underlying structure is red-black tree
-	val serverContinuum = new TreeMap[Double, Server] // Ordered map of locations -> servers on the hash ring; underlying structure is red-black tree
+	val keyContinuum = new TreeMap[Integer, String] // Ordered map of locations -> keys on the hash ring; underlying structure is red-black tree
+	val serverContinuum = new TreeMap[Integer, Server] // Ordered map of locations -> servers on the hash ring; underlying structure is red-black tree
 	val servers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] // Can I just make this a regular array?
 
 	// Adds a new server node to the hash ring
 	def addServerToRing(port:String): Boolean = {
-		var serverPosition = random.nextDouble() // Generates a random (Double) position on the hash ring from (0, 1)
+		var serverPosition = MurmurHash3.stringHash(port, seed)
 
 		// So long as the server position is not unique (i.e. is occupied by another server), generates a new position
 		while ((serverContinuum containsKey serverPosition) == true) { 
-			serverPosition = random.nextDouble()
+			serverPosition = MurmurHash3.stringHash(port, seed)
 		}
 
 		val server = Server(port.toInt, serverPosition)
@@ -48,10 +48,10 @@ object hashRing {
 		true
 	}
 
-	// Generates a random position on the hash ring for a key-value pair, iterates over the Map of server locations, 
+	// Generates a position on the hash ring for a key-value pair, iterates over the Map of server locations, 
 	// and returns the ID number of the server who is closest (in a clockwise direction) to the key-value pair.
 	def addPairToRing(key:String, value:String): Boolean = {
-		val kvPosition = random.nextDouble() // Generates a random position on the hash ring for the key-value pair
+		val kvPosition = MurmurHash3.stringHash(key, seed) // Generates a position on the hash ring for the key-value pair
 		var nearestServerLocation = serverContinuum.ceilingKey(kvPosition)
 		if (nearestServerLocation == null) nearestServerLocation = serverContinuum.firstKey
 
@@ -72,10 +72,10 @@ object hashRing {
 	}
 
 	// Returns list of servers and their locations on the ring
-	def listServers(): TreeMap[Double, Server] = serverContinuum
+	def listServers(): TreeMap[Integer, Server] = serverContinuum
 	
-	def migrateKVPs(newServerPosition:Double): Unit = {
-		if(serverContinuum.size > 0) {
+	def migrateKVPs(newServerPosition:Integer): Unit = {
+		if(serverContinuum.size > 1) {
 
 			// Determine location of previous node
 			var previousServerPosition = serverContinuum.lowerKey(newServerPosition)
@@ -85,10 +85,10 @@ object hashRing {
 
 			// Case 1: Location of previous location == null:
 			if (previousServerPosition == null) {
-				// Create a submap of all keys between the position of the last server (exclusive) and the end of the keyContinuum (inclusive)
-				val migratedKeys1 = keyContinuum.subMap(serverContinuum.lastKey, false, highestRandomValue, true)
+				// Create a tailMap of all keys between the position of the last server (exclusive) and the end of the keyContinuum (inclusive)
+				val migratedKeys1 = keyContinuum.tailMap(serverContinuum.lastKey, false)
 				// Create a submap of all keys between the beginning of the keyContinuum (inclusive) and the position of the new server (inclusive)
-				val migratedKeys2 = keyContinuum.subMap(0, false, newServerPosition, true)
+				val migratedKeys2 = keyContinuum.headMap(newServerPosition)
 
 				// Open connection to new server
 				val newServerPort = serverContinuum(newServerPosition).port
