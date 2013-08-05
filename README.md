@@ -3,7 +3,6 @@ dynamite
 
 ## To Do
 1. Write get function for coordinator.
-	1. Switch random number generator to... y'know, an _actual_ hash function. Probably MurmurHash 3?
 2. Fix error: https://gist.github.com/kpfell/e72a037403bfdd725560
 3. Write replicant servers.
 
