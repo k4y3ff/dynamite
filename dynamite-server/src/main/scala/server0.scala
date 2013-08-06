@@ -9,8 +9,6 @@ import java.net.Socket
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-import net.liftweb.json._
-
 import scala.util.hashing.MurmurHash3
 
 object server0 {
@@ -66,12 +64,23 @@ object server0 {
   // Returns a value, given a key
   def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "false") // This is problematic, because someone might want to store the string "false"
   
-  // This does nothing useful at the moment.
-  def migrate(lowestHashStr:String, highestHashStr:String, seedStr:String): Unit = {
-    val lowestHash = lowestHashStr.toInt
-    val highestHash = highestHashStr.toInt
-    val seed = seedStr.toInt
+  def migrate(tokens: Array[String]): Unit = {
+    val lowestHash = tokens(0).toInt
+    val highestHash = tokens(1).toInt
+    val seed = tokens(2).toInt
 
+    var kvsToMigrate = ""
+
+    for ((key, value) <- kvStore) {
+      val keyPosition = MurmurHash3.stringHash(key, seed)
+
+      if (keyPosition > lowestHash && keyPosition <= highestHash) {
+        kvsToMigrate += key + "$" + value + "$$"
+      }
+
+    }
+
+    kvsToMigrate
   }
 
   // Adds a new key-value pair to kvStore
@@ -90,11 +99,11 @@ object server0 {
     val tokens = request.split(" ")
     val command = tokens(0)
     command match {
-      case "delete" => delete(tokens.slice(1,3)); return "true"
-      case "get"    => return get(tokens.slice(1,2))
-      //case "migrate" => migrate(lowestHashStr, highestHashStr)
-      case "set"    => return set(tokens.slice(1,3))
-      case other    => return "Command not found."
+      case "delete"   => delete(tokens.slice(1,3)); return "true"
+      case "get"      => return get(tokens.slice(1,2))
+      case "migrate"  => migrate(tokens.slice(1,4)); return "true"
+      case "set"      => return set(tokens.slice(1,3))
+      case other      => return "Command not found."
     }
     
   }

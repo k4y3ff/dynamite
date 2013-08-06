@@ -122,6 +122,9 @@ object hashRing {
 			/*
 			/ There's almost certainly a way to write the hash ring without a case-by-case structure, but 
 			/ at the moment, I'm not sure how.
+			/ 
+			/ Also, key migration is really terrible at the moment. I'm currently working on migrating directly
+			/ between servers.
 			*/
 
 			// Case 1: Location of previous location == null:
