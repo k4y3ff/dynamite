@@ -1,12 +1,15 @@
 import akka.actor.ActorDSL._
 import akka.actor.ActorSystem
 
+import collection.mutable
+
 import java.net.ServerSocket
 import java.io.PrintStream
 import java.net.Socket
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import collection.mutable
+
+import net.liftweb.json._
 
 import scala.util.hashing.MurmurHash3
 
@@ -63,13 +66,11 @@ object server0 {
   // Returns a value, given a key
   def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "false") // This is problematic, because someone might want to store the string "false"
   
+  // This does nothing useful at the moment.
   def migrate(lowestHashStr:String, highestHashStr:String, seedStr:String): Unit = {
     val lowestHash = lowestHashStr.toInt
     val highestHash = highestHashStr.toInt
     val seed = seedStr.toInt
-
-    
-
 
   }
 
