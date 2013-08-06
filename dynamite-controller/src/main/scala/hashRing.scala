@@ -119,6 +119,11 @@ object hashRing {
 			// Determine location of next node
 			var nextServerPosition = serverContinuum.higherKey(newServerPosition)
 
+			/*
+			/ There's almost certainly a way to write the hash ring without a case-by-case structure, but 
+			/ at the moment, I'm not sure how.
+			*/
+
 			// Case 1: Location of previous location == null:
 			if (previousServerPosition == null) { // SHOULD BE USING PATTERN MATCHING!
 				// Create a tailMap of all keys between the position of the last server (exclusive) and the end of the keyContinuum (inclusive)
