@@ -44,7 +44,7 @@ object hashRing {
 		serverContinuum(serverPosition) = server
 
 		////////////////////////////////////////////////////////
-		println("Added server to position " + serverPosition) // Prints to terminal for debugging
+		println("Added server to position " + serverPosition + ".") // Prints to terminal for debugging
 		////////////////////////////////////////////////////////
 
 		migrateKVPs(serverPosition)
@@ -59,7 +59,7 @@ object hashRing {
 		val kvPosition = MurmurHash3.stringHash(key, seed) // Generates a position on the hash ring for the key-value pair
 		
 		////////////////////////////////////////////////////////////////////
-		println("Generated hash value " + kvPosition + " for key " + key) // Prints to terminal for debugging
+		println("Generated hash value " + kvPosition + " for key " + key + ".") // Prints to terminal for debugging
 		////////////////////////////////////////////////////////////////////
 
 		var nearestServerLocation = serverContinuum.ceilingKey(kvPosition)

@@ -8,6 +8,8 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import collection.mutable
 
+import scala.util.hashing.MurmurHash3
+
 object server1 {
   
   implicit val system = ActorSystem("coodinatoracceptor")
@@ -61,6 +63,14 @@ object server1 {
   // Returns a value, given a key
   def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "false") // This is problematic, because someone might want to store the string "false"
   
+  def migrate(lowestHashStr:String, highestHashStr:String, seedStr:String): Unit = {
+    val lowestHash = lowestHashStr.toInt
+    val highestHash = highestHashStr.toInt
+    val seed = seedStr.toInt
+
+
+  }
+
   // Adds a new key-value pair to kvStore
   def set(tokens:Array[String]): String = {
     kvStore(tokens(0)) = tokens(1)
@@ -79,6 +89,7 @@ object server1 {
     command match {
       case "delete" => delete(tokens.slice(1,3)); return "true"
       case "get"    => return get(tokens.slice(1,2))
+      //case "migrate" => migrate(lowestHashStr, highestHashStr)
       case "set"    => return set(tokens.slice(1,3))
       case other    => return "Command not found."
     }
