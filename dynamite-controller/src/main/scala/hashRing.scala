@@ -43,9 +43,9 @@ object hashRing {
 		val server = Server(port.toInt, serverPosition)
 		serverContinuum(serverPosition) = server
 
-		////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////
 		println("Added server to position " + serverPosition + ".") // Prints to terminal for debugging
-		////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////
 
 		migrateKVPs(serverPosition)
 
@@ -58,9 +58,9 @@ object hashRing {
 
 		val kvPosition = MurmurHash3.stringHash(key, seed) // Generates a position on the hash ring for the key-value pair
 		
-		////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////
 		println("Generated hash value " + kvPosition + " for key " + key + ".") // Prints to terminal for debugging
-		////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////
 
 		var nearestServerLocation = serverContinuum.ceilingKey(kvPosition)
 		if (nearestServerLocation == null) nearestServerLocation = serverContinuum.firstKey
@@ -137,17 +137,19 @@ object hashRing {
 				// Open connection to new server
 				val newServerPort = serverContinuum(newServerPosition).port
 				val newServerSock = new Socket(host, newServerPort)
+				val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))
 				val newServerPS = new PrintStream(newServerSock.getOutputStream())
 
 				// Open connection to old server that the keys will be moved from
 				val oldServerPort = serverContinuum(nextServerPosition).port
 				val oldServerSock = new Socket(host, oldServerPort)
+				val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))				
 				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
 
 				// Iterate over first submap, adding each KVP to new server, then removing from old server
 				migratedKeys1.foreach(pair => {
 					val key = pair._1
-					val value = oldServerPS.println("get " + pair._1)
+					val value = oldServerPS.println("get " + pair._1) // THIS DOESN'T WORK
 					newServerPS.println("set " + key + " " + value)
 					oldServerPS.println("delete " + key)
 				})
@@ -155,7 +157,7 @@ object hashRing {
 				// Iterate over second submap, adding each KVP to new server, then removing from old server
 				migratedKeys2.foreach(pair => {
 					val key = pair._1
-					val value = oldServerPS.println("get " + pair._1)
+					val value = oldServerPS.println("get " + pair._1) // THIS DOESN'T WORK
 					newServerPS.println("set " + key + " " + value)
 					oldServerPS.println("delete " + key)
 				})
@@ -173,17 +175,19 @@ object hashRing {
 				// Open connection to new server
 				val newServerPort = serverContinuum(newServerPosition).port
 				val newServerSock = new Socket(host, newServerPort)
+				val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))				
 				val newServerPS = new PrintStream(newServerSock.getOutputStream())
 
 				// Open connection to old server that the keys will be moved from
 				val oldServerPort = serverContinuum(serverContinuum.firstKey).port
 				val oldServerSock = new Socket(host, oldServerPort)
+				val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))				
 				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
 
 				// Iterate over submap, adding each KVP to new server, then removing from oldserver
 				migratedKeys.foreach(pair => {
 					val key = pair._1
-					val value = oldServerPS.println("get " + pair._1)
+					val value = oldServerPS.println("get " + pair._1) // THIS DOESN'T WORK
 					newServerPS.println("set " + key + " " + value)
 					oldServerPS.println("delete " + key)
 				})
@@ -199,17 +203,19 @@ object hashRing {
 				// Open connection to new server
 				val newServerPort = serverContinuum(newServerPosition).port
 				val newServerSock = new Socket(host, newServerPort)
+				val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))				
 				val newServerPS = new PrintStream(newServerSock.getOutputStream())
 
 				// Open connection to old server that the keys will be moved from
 				val oldServerPort = serverContinuum(serverContinuum.firstKey).port
 				val oldServerSock = new Socket(host, oldServerPort)
+				val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))
 				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
 
 				// Iterate over submap, adding each KVP to new server, then removing from oldserver
 				migratedKeys.foreach(pair => {
 					val key = pair._1
-					val value = oldServerPS.println("get " + pair._1)
+					val value = oldServerPS.println("get " + pair._1) // THIS DOESN'T WORK
 					newServerPS.println("set " + key + " " + value)
 					oldServerPS.println("delete " + key)
 				})

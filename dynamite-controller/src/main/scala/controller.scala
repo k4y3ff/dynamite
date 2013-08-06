@@ -13,7 +13,7 @@ import collection.mutable
 object controller {
 	def main(args: Array[String]): Unit = {
 	  
-	  case class Client(sock:Socket, is:BufferedReader, ps:PrintStream, name:String)
+	  case class Client(sock: Socket, is: BufferedReader, ps: PrintStream, name: String)
 	  
 	  implicit val system = ActorSystem("clientacceptor")
 
