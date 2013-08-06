@@ -16,7 +16,7 @@ import scala.util.hashing.MurmurHash3
 
 /*
 / NOTE:
-/ This coordinator/hash ring doesn't work for multiple clients. :(
+/ This coordinator/hash ring doesn't work for multiple clients yet. :(
 */
 
 object hashRing {
@@ -120,7 +120,7 @@ object hashRing {
 			var nextServerPosition = serverContinuum.higherKey(newServerPosition)
 
 			// Case 1: Location of previous location == null:
-			if (previousServerPosition == null) {
+			if (previousServerPosition == null) { // SHOULD BE USING PATTERN MATCHING!
 				// Create a tailMap of all keys between the position of the last server (exclusive) and the end of the keyContinuum (inclusive)
 				val migratedKeys1 = keyContinuum.tailMap(serverContinuum.lastKey, false)
 				// Create a submap of all keys between the beginning of the keyContinuum (inclusive) and the position of the new server (inclusive)
@@ -157,7 +157,7 @@ object hashRing {
 			}
 
 			// Case 2: Location of next location == null:
-			else if (nextServerPosition == null) {
+			else if (nextServerPosition == null) { // SHOULD BE USING PATTERN MATCHING!
 
 				// Create a submap of all keys between the position of the preceding server and the location of the new server
 				val migratedKeys = keyContinuum.subMap(previousServerPosition, false, newServerPosition, true)
@@ -185,7 +185,7 @@ object hashRing {
 			}
 
 			// Case 3
-			else {
+			else { // SHOULD BE USING PATTERN MATCHING!
 				val migratedKeys = keyContinuum.subMap(previousServerPosition, false, newServerPosition, true)
 
 				// Open connection to new server
