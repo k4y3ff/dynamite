@@ -68,9 +68,9 @@ object server0 {
   
   def migrate(tokens:Array[String]): Unit = {
     // Establish low end of hash range
-    val lowHashValue = tokens(0).toInt
+    val lowHashValueStr = tokens(0)
     // Establish high end of hash range
-    val highHashValue = tokens(1).toInt
+    val highHashValueStr = tokens(1)
     // Establish seed for hash function
     val seed = tokens(2).toInt
     // Establish port of new server
@@ -81,23 +81,66 @@ object server0 {
     val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))
     val newServerPS = new PrintStream(newServerSock.getOutputStream())
 
-    // Loop through all KVPs in kvStore
-    for((key, value) <- kvStore) {
-      // For each KVP
-        // If the key falls within a certain hash value range,
+    if (highHashValueStr == "end") { // SHOULD BE USING PATTERN MATCHING!
+      val lowHashValue = lowHashValueStr.toInt
+
+      for((key, value) <- kvStore) {
         val keyHashValue = MurmurHash3.stringHash(key, seed)
-        if (keyHashValue <= highHashValue && keyHashValue > lowHashValue) {
-          // Send the key and value to the new server
+        
+        if (keyHashValue > lowHashValue) {
           newServerPS.println("set " + key + " " + value)
-          // Wait for confirmation from the new server
-          val confirmation = newServerIS.readLine // Blocking call?
-          // If the confirmation is false, return false; else delete the KVP from the server
+          
+          val confirmation = newServerIS.readLine // Blocking call == bad?
+          
           if (confirmation == "true") {
             val args = new Array[String](1)
             args(0) = key
             delete(args)
           }
         }
+
+      }
+    }
+
+    else if (lowHashValueStr == "beginning") {
+      val highHashValue = highHashValueStr.toInt
+
+      for ((key, value) <- kvStore) {
+        val keyHashValue = MurmurHash3.stringHash(key, seed)
+        
+        if (keyHashValue <= highHashValue) {
+          newServerPS.println("set " + key + " " + value)
+          
+          val confirmation = newServerIS.readLine
+          
+          if (confirmation == "true") {
+            val args = new Array[String](1)
+            args(0) = key
+            delete(args)
+          }
+        }
+      }
+    }
+
+    else {
+      val lowHashValue = lowHashValueStr.toInt
+      val highHashValue = highHashValueStr.toInt
+
+      for((key, value) <- kvStore) {
+          val keyHashValue = MurmurHash3.stringHash(key, seed)
+
+          if (keyHashValue <= highHashValue && keyHashValue > lowHashValue) {
+            newServerPS.println("set " + key + " " + value)
+
+            val confirmation = newServerIS.readLine
+
+            if (confirmation == "true") {
+              val args = new Array[String](1)
+              args(0) = key
+              delete(args)
+            }
+          }
+      }
     }
 
     // Close the server socket
@@ -128,7 +171,7 @@ object server0 {
     command match {
       case "delete"   => delete(tokens.slice(1,3)); return "true"
       case "get"      => return get(tokens.slice(1,2))
-      // case "migrate"  => migrate(tokens.slice(1,4)); return "true"
+      case "migrate"  => migrate(tokens.slice(1,5)); return "true"
       case "set"      => return set(tokens.slice(1,3))
       case other      => return "Command not found."
     }

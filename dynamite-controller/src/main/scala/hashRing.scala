@@ -45,9 +45,9 @@ object hashRing {
 		val server = Server(port.toInt, serverPosition)
 		serverContinuum(serverPosition) = server
 
-		//////////////////////////////////////////////////////////////
-		println("Added server to position " + serverPosition + ".") // Prints to terminal for debugging
-		//////////////////////////////////////////////////////////////
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////
+		if (serverContinuum contains serverPosition) println("Added server to position " + serverPosition + ".") // Prints to terminal for debugging
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		migrateKVPs(serverPosition)
 
@@ -131,16 +131,9 @@ object hashRing {
 
 			// Case 1: Location of previous location == null:
 			if (previousServerPosition == null) { // SHOULD BE USING PATTERN MATCHING!
-				// Create a tailMap of all keys between the position of the last server (exclusive) and the end of the keyContinuum (inclusive)
-				val migratedKeys1 = keyContinuum.tailMap(serverContinuum.lastKey, false)
-				// Create a submap of all keys between the beginning of the keyContinuum (inclusive) and the position of the new server (inclusive)
-				val migratedKeys2 = keyContinuum.headMap(newServerPosition)
 
-				// Open connection to new server
+				// Get port of new server
 				val newServerPort = serverContinuum(newServerPosition).port
-				val newServerSock = new Socket(host, newServerPort)
-				val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))
-				val newServerPS = new PrintStream(newServerSock.getOutputStream())
 
 				// Open connection to old server that the keys will be moved from
 				val oldServerPort = serverContinuum(nextServerPosition).port
@@ -148,37 +141,19 @@ object hashRing {
 				val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))				
 				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
 
-				// Iterate over first submap, adding each KVP to new server, then removing from old server
-				migratedKeys1.foreach(pair => {
-					val key = pair._1
-					val value = oldServerPS.println("get " + pair._1) // THIS DOESN'T WORK
-					newServerPS.println("set " + key + " " + value)
-					oldServerPS.println("delete " + key)
-				})
+				// Tell the old server to migrate the keys hashed between the "last" server on the ring and the "end" of the ring to the new server
+				oldServerPS.println("migrate " + serverContinuum.lastKey + " " + "end" + " " + seed + " " + newServerPort)
+				// Tell the old server to migrate the keys hashed between the "beginning" of the ring and the new server's location to the new server
+				oldServerPS.println("migrate " + "beginning" + " " + newServerPosition + seed + newServerPort)
 
-				// Iterate over second submap, adding each KVP to new server, then removing from old server
-				migratedKeys2.foreach(pair => {
-					val key = pair._1
-					val value = oldServerPS.println("get " + pair._1) // THIS DOESN'T WORK
-					newServerPS.println("set " + key + " " + value)
-					oldServerPS.println("delete " + key)
-				})
-
-				newServerSock.close()
+				// newServerSock.close()
 				oldServerSock.close()
 			}
 
 			// Case 2: Location of next location == null:
 			else if (nextServerPosition == null) { // SHOULD BE USING PATTERN MATCHING!
 
-				// Create a submap of all keys between the position of the preceding server and the location of the new server
-				val migratedKeys = keyContinuum.subMap(previousServerPosition, false, newServerPosition, true)
-
-				// Open connection to new server
 				val newServerPort = serverContinuum(newServerPosition).port
-				val newServerSock = new Socket(host, newServerPort)
-				val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))				
-				val newServerPS = new PrintStream(newServerSock.getOutputStream())
 
 				// Open connection to old server that the keys will be moved from
 				val oldServerPort = serverContinuum(serverContinuum.firstKey).port
@@ -186,15 +161,9 @@ object hashRing {
 				val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))				
 				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
 
-				// Iterate over submap, adding each KVP to new server, then removing from oldserver
-				migratedKeys.foreach(pair => {
-					val key = pair._1
-					val value = oldServerPS.println("get " + pair._1) // THIS DOESN'T WORK
-					newServerPS.println("set " + key + " " + value)
-					oldServerPS.println("delete " + key)
-				})
+				// Tell the old server to migrate the keys hashed between the previous server on the ring and the new server on the ring to the new server
+				oldServerPS.println("migrate " + previousServerPosition + " " + newServerPosition + " " + seed + " " + newServerPort)
 
-				newServerSock.close()
 				oldServerSock.close()
 			}
 
@@ -202,27 +171,14 @@ object hashRing {
 			else { // SHOULD BE USING PATTERN MATCHING!
 				val migratedKeys = keyContinuum.subMap(previousServerPosition, false, newServerPosition, true)
 
-				// Open connection to new server
-				val newServerPort = serverContinuum(newServerPosition).port
-				val newServerSock = new Socket(host, newServerPort)
-				val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))				
-				val newServerPS = new PrintStream(newServerSock.getOutputStream())
-
 				// Open connection to old server that the keys will be moved from
 				val oldServerPort = serverContinuum(serverContinuum.firstKey).port
 				val oldServerSock = new Socket(host, oldServerPort)
 				val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))
 				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
 
-				// Iterate over submap, adding each KVP to new server, then removing from oldserver
-				migratedKeys.foreach(pair => {
-					val key = pair._1
-					val value = oldServerPS.println("get " + pair._1) // THIS DOESN'T WORK
-					newServerPS.println("set " + key + " " + value)
-					oldServerPS.println("delete " + key)
-				})
+				oldServerPS.println("migrate " + previousServerPosition + " " + newServerPosition + " " + seed + " " + newServerPosition)
 
-				newServerSock.close()
 				oldServerSock.close()
 			}
 		}
