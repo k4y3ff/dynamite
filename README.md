@@ -7,4 +7,5 @@ dynamite
 
 ## To Do
 1. Fix key migration.
+	1. Write coodinator to use the migration function on the server.
 2. Write replicant servers.

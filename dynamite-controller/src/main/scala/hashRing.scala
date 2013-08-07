@@ -12,6 +12,8 @@ import java.io.BufferedReader
 import java.io.PrintStream
 import java.io.InputStreamReader
 
+import scala.concurrent._
+import ExecutionContext.Implicits.global
 import scala.util.hashing.MurmurHash3
 
 /*

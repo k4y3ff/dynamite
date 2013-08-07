@@ -66,15 +66,44 @@ object server1 {
   // Returns a value, given a key
   def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "false") // This is problematic, because someone might want to store the string "false"
   
-  // def migrate(tokens: Array[String]): Unit = {
-  //   val lowestHash = tokens(0).toInt
-  //   val highestHash = tokens(1).toInt
-  //   val newServerPort = tokens(2).toInt
-  //   val seed = tokens(3).toInt
+  def migrate(tokens:Array[String]): Unit = {
+    // Establish low end of hash range
+    val lowHashValue = tokens(0).toInt
+    // Establish high end of hash range
+    val highHashValue = tokens(1).toInt
+    // Establish seed for hash function
+    val seed = tokens(2).toInt
+    // Establish port of new server
+    val newServerPort = tokens(3).toInt
 
-  //   var kvsToMigrate = ""
+    // Open connection to the new server
+    val newServerSock = new Socket(host, newServerPort)
+    val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))
+    val newServerPS = new PrintStream(newServerSock.getOutputStream())
 
-  // }
+    // Loop through all KVPs in kvStore
+    for((key, value) <- kvStore) {
+      // For each KVP
+        // If the key falls within a certain hash value range,
+        val keyHashValue = MurmurHash3.stringHash(key, seed)
+        if (keyHashValue <= highHashValue && keyHashValue > lowHashValue) {
+          // Send the key and value to the new server
+          newServerPS.println("set " + key + " " + value)
+          // Wait for confirmation from the new server
+          val confirmation = newServerIS.readLine // Blocking call?
+          // If the confirmation is false, return false; else delete the KVP from the server
+          if (confirmation == "true") {
+            val args = new Array[String](1)
+            args(0) = key
+            delete(args)
+          }
+        }
+    }
+
+    // Close the server socket
+    newServerSock.close()
+
+  }
 
 
 
@@ -82,11 +111,14 @@ object server1 {
   def set(tokens:Array[String]): String = {
     kvStore(tokens(0)) = tokens(1)
 
-    ////////////////////////////////////////////////////////////////
-    println("Added key " + tokens(0) + " and value " + tokens(1)) // Prints to terminal for debugging
-    ////////////////////////////////////////////////////////////////
+    if (kvStore contains tokens(0)) {
+      ////////////////////////////////////////////////////////////////
+      println("Added key " + tokens(0) + " and value " + tokens(1)) // Prints to terminal for debugging
+      ////////////////////////////////////////////////////////////////
+      return "true"
+    }
 
-    "Key '" + tokens(0) + "' assigned value '" + tokens(1) + "'."
+    "false"
 
   }
   
