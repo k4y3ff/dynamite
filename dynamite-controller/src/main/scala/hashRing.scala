@@ -47,9 +47,9 @@ object hashRing {
 		val server = Server(port.toInt, serverPosition, serverName)
 		serverContinuum(serverPosition) = server
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////
-		if (serverContinuum contains serverPosition) println("Added server to position " + serverPosition + ".") // Prints to terminal for debugging
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		if (serverContinuum contains serverPosition) println("Added server at port " + port + " to position " + serverPosition + ".") // Prints to terminal for debugging
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		migrateKVPs(serverPosition)
 
@@ -61,9 +61,17 @@ object hashRing {
 	def addPairToRing(key:String, value:String): Boolean = {
 
 		val kvPosition = MurmurHash3.stringHash(key, seed) // Generates a position on the hash ring for the key-value pair
+
+		if (serverContinuum.size < 1) {
+			///////////////////////////////////////////////////////////
+			println("No server available to save KVP " + key + ".") // Prints to terminal for debugging
+			//////////////////////////////////////////////////////////
+
+			return false // Need to send a message to the client, not just false
+		}
 		
 		//////////////////////////////////////////////////////////////////////////
-		println("Generated hash value " + kvPosition + " for key " + key + ".") // Prints to terminal for debugging
+		println("Generated hash value " + kvPosition + " for key '" + key + "'.") // Prints to terminal for debugging
 		//////////////////////////////////////////////////////////////////////////
 
 		var nearestServerLocation = serverContinuum.ceilingKey(kvPosition)

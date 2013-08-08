@@ -6,7 +6,7 @@ dynamite
 
 ## To Do
 1. sbt doesn't allow backspaces in the terminal? Probably should write a proper client....
-2. When adding a server, check that it is online before returning "true."
+2. Write a delete command for the client and coordinator.
 3. Add error message so that if a user tries to set the value for a key that already exists, it will prompt the user to update, instead.
 4. Add an update command.
 5. Space the client printouts properly.
