@@ -60,11 +60,30 @@ object controller {
 	  val command = tokens(0)
 
 	  def callController(command:String): String = command match {
-	  	case "addServer" 	=> hashRing.addServerToRing(tokens(1)).toString
-	  	case "get"			=> hashRing.getValue(tokens(1)).toString
-	  	case "listServers"	=> hashRing.listServers().toString
-	  	case "set"			=> hashRing.addPairToRing(tokens(1), tokens(2)).toString
-	  	case "status"		=> hashRing.status()
+	  	case "addServer" 	=> {
+	  		if (tokens.length < 2) return "Must enter a port number."
+	  		else if (tokens.length > 2) return "Too many arguments." // What should I say instead of this?
+	  		hashRing.addServerToRing(tokens(1)).toString
+	  	}
+	  	case "get"			=> {
+	  		if (tokens.length < 2) return "Must enter a key."
+	  		else if (tokens.length > 2) return "Too many arguments."
+	  		hashRing.getValue(tokens(1)).toString
+	  	}
+	  	case "listServers"	=> {
+	  		if (tokens.length > 1) return "Too many arguments."
+	  		hashRing.listServers().toString
+	  	}
+	  	case "set"			=> {
+	  		if (tokens.length == 1) return "Must enter a key and value."
+	  		else if (tokens.length == 2) return "Must enter a value."
+	  		else if (tokens.length > 3) return "Too many arguments."
+	  		hashRing.addPairToRing(tokens(1), tokens(2)).toString
+	  	}
+	  	case "status"		=> {
+	  		if (tokens.length > 1) return "Too many arguments."
+	  		hashRing.status()
+	  	}
 	  	case _				=> "false"
 	  }
 
