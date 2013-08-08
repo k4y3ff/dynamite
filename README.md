@@ -17,6 +17,11 @@ dynamite
 9. Fix concurrency issues for the controller/servers.
 10. Fault tolerance!
 
+# App goals
+- Write a task list (or something) that uses the database as its backend.
+	1. Write it with Python/Flask.
+	2. Write it with Scala/Play.
+
 # Fault tolerance goals
 - When a server is killed (or removed from the network), its KVPs should be inaccessible, and any KVPs hashed to that server's section of the ring should be sent to another server. When the server comes back online (or disconnects from the network), keys hashed to the "backup" server should be migrated accordingly.
 	- If I go the server-killing route (vs. removing servers from the network), I need to make the datastore persistent.
