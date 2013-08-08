@@ -169,11 +169,12 @@ object server0 {
     val tokens = request.split(" ")
     val command = tokens(0)
     command match {
-      case "delete"   => delete(tokens.slice(1,3)); return "true"
-      case "get"      => return get(tokens.slice(1,2))
-      case "migrate"  => migrate(tokens.slice(1,5)); return "true"
-      case "set"      => return set(tokens.slice(1,3))
-      case other      => return "Command not found."
+      case "countKVPs"  => kvStore.size.toString
+      case "delete"     => delete(tokens.slice(1,3)); return "true"
+      case "get"        => get(tokens.slice(1,2))
+      case "migrate"    => migrate(tokens.slice(1,5)); return "true"
+      case "set"        => set(tokens.slice(1,3))
+      case other        => "Command not found."
     }
     
   }

@@ -25,16 +25,18 @@ object hashRing {
 
 	val host = "localhost"
 
-	case class Server(port:Int, position:Integer)
+	case class Server(port:Int, position:Integer, name:String)
 
 	val seed = 1234567890 // Manually set seed value used to hash strings with MurmurHash 3
 	
 	val keyContinuum = new TreeMap[Integer, String] // Ordered map of locations -> keys on the hash ring; underlying structure is red-black tree
 	val serverContinuum = new TreeMap[Integer, Server] // Ordered map of locations -> servers on the hash ring; underlying structure is red-black tree
-	val servers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] // Can I just make this a regular array?
+	//val servers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] // Can I just make this a regular array?
 
 	// Adds a new server node to the hash ring
 	def addServerToRing(port:String): Boolean = {
+		val serverName = "server" + serverContinuum.size.toString
+
 		var serverPosition = MurmurHash3.stringHash(port, seed)
 
 		// So long as the server position is not unique (i.e. is occupied by another server), generates a new position
@@ -42,7 +44,7 @@ object hashRing {
 			serverPosition = MurmurHash3.stringHash(port, seed)
 		}
 
-		val server = Server(port.toInt, serverPosition)
+		val server = Server(port.toInt, serverPosition, serverName)
 		serverContinuum(serverPosition) = server
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,12 +77,12 @@ object hashRing {
 		val ps = new PrintStream(sock.getOutputStream())
 
 		ps.println("get " + key)
-		var output = is.readLine // READLINE IS A BLOCKING CALL. THIS IS BAD, BAD, BAD.
+		var output = is.readLine // Blocking call
 
 		if (output != "false") return false // This is problematic, because someone might want to store the string "false"
 
 		ps.println("set " + key + " " + value)
-		output = is.readLine // READLINE IS A BLOCKING CALL. THIS IS BAD, BAD, BAD.
+		output = is.readLine // Blocking call
 		sock.close()
 
 		keyContinuum(kvPosition) = key
@@ -99,7 +101,7 @@ object hashRing {
 		val is = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
 
 		serverPS.println("get " + key)
-		val value = is.readLine // READLINE IS A BLOCKING CALL. THIS IS BAD, BAD, BAD.
+		val value = is.readLine // Blocking call
 		serverSock.close()
 
 		value
@@ -146,7 +148,6 @@ object hashRing {
 				// Tell the old server to migrate the keys hashed between the "beginning" of the ring and the new server's location to the new server
 				oldServerPS.println("migrate " + "beginning" + " " + newServerPosition + seed + newServerPort)
 
-				// newServerSock.close()
 				oldServerSock.close()
 			}
 
@@ -182,6 +183,28 @@ object hashRing {
 				oldServerSock.close()
 			}
 		}
+	}
+
+	def status(): String = {
+		var statusMessage = "\nStatus\n====================\n\n"
+
+		for ((location, server) <- serverContinuum) {
+			statusMessage += server.name + "\n--------------------\nPort: " + server.port + "\nHash Location: " + location + "\n"
+
+			val serverPort = server.port
+			val serverSock = new Socket(host, serverPort)
+			val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
+			val serverPS = new PrintStream(serverSock.getOutputStream())
+
+			serverPS.println("countKVPs")
+			val kvpCount = serverIS.readLine // Blocking call
+
+			serverSock.close()
+
+			statusMessage += "KVP Count: " + kvpCount + "\n\n"
+		}
+
+		statusMessage
 	}
 	
 

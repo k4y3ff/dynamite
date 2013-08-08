@@ -64,6 +64,7 @@ object controller {
 	  	case "get"			=> hashRing.getValue(tokens(1)).toString
 	  	case "listServers"	=> hashRing.listServers().toString
 	  	case "set"			=> hashRing.addPairToRing(tokens(1), tokens(2)).toString
+	  	case "status"		=> hashRing.status()
 	  	case _				=> "false"
 	  }
 
