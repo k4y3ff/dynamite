@@ -201,7 +201,20 @@ object hashRing {
 
 			serverSock.close()
 
-			statusMessage += "KVP Count: " + kvpCount + "\n\n"
+			statusMessage += "KVP Count: " + kvpCount + "\n"
+
+			val kvpLowValue = serverContinuum.lowerKey(location)
+			
+			var kvpRange = "" // The compiler won't allow me to define kvpRange within the if/else block, for some reason...?
+
+			if (kvpLowValue == null) {
+				kvpRange = "(-∞, " + location + "]" + " U (" + serverContinuum.lastKey +", " + "∞)"
+			}
+			else {
+				kvpRange = "(" + kvpLowValue + ", " + location + "]"
+			}
+
+			statusMessage += "KVP Range: " + kvpRange + "\n\n"
 		}
 
 		statusMessage
