@@ -29,7 +29,6 @@ object hashRing {
 
 	val seed = 1234567890 // Manually set seed value used to hash strings with MurmurHash 3
 	
-	//val keyContinuum = new TreeMap[Integer, String] // Ordered map of locations -> keys on the hash ring; underlying structure is red-black tree
 	val serverContinuum = new TreeMap[Integer, Server] // Ordered map of locations -> servers on the hash ring; underlying structure is red-black tree
 	//val servers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] // Can I just make this a regular array?
 
@@ -93,8 +92,6 @@ object hashRing {
 		ps.println("set " + key + " " + value)
 		output = is.readLine // Blocking call
 		sock.close()
-
-		//keyContinuum(kvPosition) = key
 
 		true
 	}
@@ -196,7 +193,6 @@ object hashRing {
 
 			// Case 3
 			else { // SHOULD BE USING PATTERN MATCHING!
-				//val migratedKeys = keyContinuum.subMap(previousServerPosition, false, newServerPosition, true)
 
 				// Open connection to old server that the keys will be moved from
 				val oldServerPort = serverContinuum(serverContinuum.firstKey).port
