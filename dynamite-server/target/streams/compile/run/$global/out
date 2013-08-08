@@ -1,6 +1,5 @@
-[0m[[0minfo[0m] [0mRunning server0 [0m
+[0m[[0minfo[0m] [0mRunning server1 [0m
 [0m[[0mdebug[0m] [0mStarting sandboxed run...[0m
-[0m[[0mdebug[0m] [0mWaiting for threads to exit or System.exit to be called.[0m
 [0m[[0mdebug[0m] [0m  Classpath:[0m
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/src/dynamite/dynamite-server/target/scala-2.10/classes[0m
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/.sbt/boot/scala-2.10.2/lib/scala-library.jar[0m
@@ -11,4 +10,5 @@
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/.sbt/boot/scala-2.10.2/lib/scala-compiler.jar[0m
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.10.2.jar[0m
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/.ivy2/cache/com.thoughtworks.paranamer/paranamer/jars/paranamer-2.4.1.jar[0m
+[0m[[0mdebug[0m] [0mWaiting for threads to exit or System.exit to be called.[0m
 [0m[[0mdebug[0m] [0mWaiting for thread run-main to exit[0m

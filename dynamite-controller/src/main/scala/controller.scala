@@ -65,6 +65,11 @@ object controller {
 	  		else if (tokens.length > 2) return "Too many arguments." // What should I say instead of this?
 	  		hashRing.addServerToRing(tokens(1)).toString
 	  	}
+	  	case "delete"		=> {
+	  		if (tokens.length < 2) return "Must enter a key."
+	  		else if (tokens.length > 2) return "Too many arguments."
+	  		hashRing.deleteKVP(tokens(1)).toString
+	  	}
 	  	case "get"			=> {
 	  		if (tokens.length < 2) return "Must enter a key."
 	  		else if (tokens.length > 2) return "Too many arguments."

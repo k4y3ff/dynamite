@@ -98,6 +98,23 @@ object hashRing {
 		true
 	}
 
+	def deleteKVP(key:String): String = {
+		val kvpPosition = MurmurHash3.stringHash(key, seed)
+		var serverPosition = serverContinuum.higherKey(kvpPosition)
+		if (serverPosition == null) serverPosition = serverContinuum.firstKey
+
+		val serverPort = serverContinuum(serverPosition).port
+		val serverSock = new Socket(host, serverPort)
+		val serverPS = new PrintStream(serverSock.getOutputStream())
+		val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
+
+		serverPS.println("delete " + key)
+		val confirmation = serverIS.readLine // Blocking call
+		serverSock.close()
+
+		confirmation
+	}
+
 	def getValue(key:String): String = {
 		val keyPosition = MurmurHash3.stringHash(key, seed)
 		var serverPosition = serverContinuum.higherKey(keyPosition)
