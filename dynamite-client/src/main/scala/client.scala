@@ -26,7 +26,7 @@ object client {
         case true => while(true) { 
           if(is.ready) { 
             val output = is.readLine 
-            println(output) 
+            print(output + "\n\n") 
           } 
           Thread.sleep(100) 
         }

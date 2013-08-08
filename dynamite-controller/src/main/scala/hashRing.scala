@@ -186,7 +186,7 @@ object hashRing {
 	}
 
 	def status(): String = {
-		var statusMessage = "\nStatus\n====================\n\n"
+		var statusMessage = "\nStatus\n====================\n"
 
 		for ((location, server) <- serverContinuum) {
 			statusMessage += server.name + "\n--------------------\nPort: " + server.port + "\nHash Location: " + location + "\n"
