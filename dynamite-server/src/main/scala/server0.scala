@@ -61,7 +61,15 @@ object server0 {
   }
   
   // Removes a single KVP from kvStore
-  def delete(tokens:Array[String]): Unit = kvStore.remove(tokens(0))
+  def delete(tokens:Array[String]): Unit = {
+    kvStore.remove(tokens(0))
+
+    if ((kvStore contains tokens(0)) == false) {
+      ////////////////////////////////////////////////////////
+      println("Key " + tokens(0) + " deleted from server.") // Prints to terminal for debugging
+      ////////////////////////////////////////////////////////
+    }
+  }
 
   // Returns a value, given a key
   def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "false") // This is problematic, because someone might want to store the string "false"
