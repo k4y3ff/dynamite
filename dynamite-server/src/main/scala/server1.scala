@@ -66,7 +66,7 @@ object server1 {
 
     if ((kvStore contains tokens(0)) == false) {
       ////////////////////////////////////////////////////////
-      println("Key " + tokens(0) + " deleted from server.") // Prints to terminal for debugging
+      println("Key '" + tokens(0) + "'' deleted from server.") // Prints to terminal for debugging
       ////////////////////////////////////////////////////////
     }
   }
@@ -163,9 +163,9 @@ object server1 {
     kvStore(tokens(0)) = tokens(1)
 
     if (kvStore contains tokens(0)) {
-      ////////////////////////////////////////////////////////////////
-      println("Added key " + tokens(0) + " and value " + tokens(1)) // Prints to terminal for debugging
-      ////////////////////////////////////////////////////////////////
+      ////////////////////////////////////////////
+      println("Added key '" + tokens(0) + "'.") // Prints to terminal for debugging
+      ////////////////////////////////////////////
       return "true"
     }
 

@@ -36,6 +36,16 @@ object hashRing {
 	def addServerToRing(port:String): Boolean = {
 		val serverName = "server" + serverContinuum.size.toString
 
+		// Verify that the server socket is open before adding the server to the network
+		try {
+			val serverSock = new Socket(host, port.toInt)
+		}
+		catch {
+			case ex: java.net.ConnectException => {
+				return false // Need to send a PROPER error message back
+			}
+		}
+
 		var serverPosition = MurmurHash3.stringHash(port, seed)
 
 		// So long as the server position is not unique (i.e. is occupied by another server), generates a new position
@@ -47,7 +57,7 @@ object hashRing {
 		serverContinuum(serverPosition) = server
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		if (serverContinuum contains serverPosition) println("Added server at port " + port + " to position " + serverPosition + ".") // Prints to terminal for debugging
+		if (serverContinuum contains serverPosition) println("Added server at port " + port + " at hash value " + serverPosition + ".") // Prints to terminal for debugging
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		migrateKVPs(serverPosition)
@@ -63,7 +73,7 @@ object hashRing {
 
 		if (serverContinuum.size < 1) {
 			///////////////////////////////////////////////////////////
-			println("No server available to save KVP " + key + ".") // Prints to terminal for debugging
+			println("No server available to save KVP '" + key + "'.") // Prints to terminal for debugging
 			//////////////////////////////////////////////////////////
 
 			return false // Need to send a message to the client, not just false
@@ -92,6 +102,12 @@ object hashRing {
 		ps.println("set " + key + " " + value)
 		output = is.readLine // Blocking call
 		sock.close()
+
+		if (output == "true") {
+			////////////////////////////////////////////////////////////////////////////////////////////
+			println("KVP '" + key + "' assigned to " + nearestServer.name + " at port " + port + ".") // Prints to terminal for debugging
+			////////////////////////////////////////////////////////////////////////////////////////////
+		}
 
 		true
 	}
@@ -136,10 +152,6 @@ object hashRing {
 	def migrateKVPs(newServerPosition:Integer): Unit = {
 		if(serverContinuum.size > 1) {
 
-			///////////////////////////////////////////////////////
-			println(serverContinuum.size + " servers detected.") // Prints to terminal for debugging
-			///////////////////////////////////////////////////////
-
 			// Determine location of previous node
 			var previousServerPosition = serverContinuum.lowerKey(newServerPosition)
 
@@ -149,9 +161,6 @@ object hashRing {
 			/*
 			/ There's almost certainly a way to write the hash ring without a case-by-case structure, but 
 			/ at the moment, I'm not sure how.
-			/ 
-			/ Also, key migration is really terrible at the moment. I'm currently working on migrating directly
-			/ between servers.
 			*/
 
 			// Case 1: Location of previous location == null:

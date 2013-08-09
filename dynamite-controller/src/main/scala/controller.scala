@@ -89,7 +89,7 @@ object controller {
 	  		if (tokens.length > 1) return "Too many arguments."
 	  		hashRing.status()
 	  	}
-	  	case _				=> "false"
+	  	case _				=> "Invalid command."
 	  }
 
 	  callController(command)
