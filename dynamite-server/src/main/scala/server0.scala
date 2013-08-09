@@ -13,7 +13,8 @@ import scala.util.hashing.MurmurHash3
 
 object server0 {
 
-  implicit val system = ActorSystem("coodinatoracceptor")
+  implicit val coordinatorSystem = ActorSystem("coodinatoracceptor")
+  implicit val terminalSystem = ActorSystem("terminalinputreader")
 
   val host = "localhost"
 
@@ -23,18 +24,19 @@ object server0 {
     case class Coordinator(sock:Socket, is:BufferedReader, ps:PrintStream, name:String)
     
     val coordinators = new mutable.ArrayBuffer[Coordinator] with mutable.SynchronizedBuffer[Coordinator] {}
-    val ss = new ServerSocket(4000)
-    
-    val coordinatorAcceptor = actor(system)(new Act {
+
+    val coordinatorAcceptor = actor(coordinatorSystem)(new Act {
       become {
         case true => {
+          val ss = new ServerSocket(4000)
+
           while(true) {
             val sock = ss.accept()
             val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
             val ps = new PrintStream(sock.getOutputStream())
 
             // This is what happens whenever a new coordinator connects with the server.
-            val coordinatorAdder = actor(system)(new Act {
+            val coordinatorAdder = actor(coordinatorSystem)(new Act {
               become {
                 case true => coordinators += Coordinator(sock, is, ps, (coordinators.length + 1).toString)
               }
@@ -46,18 +48,48 @@ object server0 {
       }
     })
 
-    coordinatorAcceptor ! true
-    
-    
-    // Things to do whenever a client sends something to the server.
-    while(true) {
-      for(coordinator <- coordinators) {
-        if(coordinator.is.ready) {
-          val request = coordinator.is.readLine 
-          coordinator.ps.println(switchboard(request))
+    val coordinatorInputReader = actor(coordinatorSystem)(new Act {
+      become {
+        case true => {
+          // Things to do whenever a client sends something to the server.
+          while (true) {
+            for (coordinator <- coordinators) {
+              if (coordinator.is.ready) {
+                val request = coordinator.is.readLine
+                coordinator.ps.println(switchboard(request))
+              }
+            }
+          }
         }
       }
-    }
+    })
+
+    val terminalInputReader = actor(terminalSystem)(new Act {
+      become {
+        case true => {
+          // Things to do whenever someone types a command into the server's terminal window
+          while (true) {
+            val terminalInput = readLine
+            if (terminalInput == "disconnect") {
+              coordinatorSystem.shutdown
+
+              println("Server offline. \n")
+            }
+            else if (terminalInput == "connect") {
+              coordinatorAcceptor ! true
+              coordinatorInputReader ! true
+
+              println("Server online. \n")
+            }
+          }
+        }
+      }
+    })
+
+    coordinatorAcceptor ! true
+    coordinatorInputReader ! true
+    terminalInputReader ! true
+
   }
   
   // Removes a single KVP from kvStore
@@ -65,14 +97,22 @@ object server0 {
     kvStore.remove(tokens(0))
 
     if ((kvStore contains tokens(0)) == false) {
-      ////////////////////////////////////////////////////////
+      ///////////////////////////////////////////////////////////
       println("Key '" + tokens(0) + "'' deleted from server.") // Prints to terminal for debugging
-      ////////////////////////////////////////////////////////
+      ///////////////////////////////////////////////////////////
     }
   }
 
   // Returns a value, given a key
-  def get(tokens:Array[String]): String = kvStore getOrElse (tokens(0), "false") // This is problematic, because someone might want to store the string "false"
+  def get(tokens:Array[String]): String = {
+    val value = kvStore getOrElse (tokens(0), "false") // This is problematic, because someone might want to store the string "false"
+
+    ////////////////////////////////////////////////////////////
+    println("KVP '" + tokens(0) + "' retrieved from server.") // Prints to terminal for debugging
+    ////////////////////////////////////////////////////////////
+
+    value
+  }
   
   def migrate(tokens:Array[String]): Unit = {
     // Establish low end of hash range

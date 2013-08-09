@@ -1,6 +1,5 @@
 [0m[[0minfo[0m] [0mRunning controller.controller [0m
 [0m[[0mdebug[0m] [0mStarting sandboxed run...[0m
-[0m[[0mdebug[0m] [0mWaiting for threads to exit or System.exit to be called.[0m
 [0m[[0mdebug[0m] [0m  Classpath:[0m
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/src/dynamite/dynamite-controller/target/scala-2.10/classes[0m
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/.sbt/boot/scala-2.10.2/lib/scala-library.jar[0m
@@ -11,4 +10,27 @@
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/.sbt/boot/scala-2.10.2/lib/scala-compiler.jar[0m
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.10.2.jar[0m
 [0m[[0mdebug[0m] [0m	/Users/katherinefellows/.ivy2/cache/com.thoughtworks.paranamer/paranamer/jars/paranamer-2.4.1.jar[0m
+[0m[[0mdebug[0m] [0mWaiting for threads to exit or System.exit to be called.[0m
 [0m[[0mdebug[0m] [0mWaiting for thread run-main to exit[0m
+[0m[[31merror[0m] [0m(run-main) java.lang.NullPointerException[0m
+java.lang.NullPointerException
+	at controller.controller$.callController$1(controller.scala:76)
+	at controller.controller$.switchboard(controller.scala:95)
+	at controller.controller$$anonfun$main$1.apply(controller.scala:50)
+	at controller.controller$$anonfun$main$1.apply(controller.scala:47)
+	at scala.collection.mutable.ResizableArray$class.foreach(ResizableArray.scala:59)
+	at scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:47)
+	at controller.controller$.main(controller.scala:46)
+	at controller.controller.main(controller.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:606)
+	at sbt.Run.invokeMain(Run.scala:68)
+	at sbt.Run.run0(Run.scala:61)
+	at sbt.Run.execute$1(Run.scala:50)
+	at sbt.Run$$anonfun$run$1.apply$mcV$sp(Run.scala:54)
+	at sbt.TrapExit$.executeMain$1(TrapExit.scala:33)
+	at sbt.TrapExit$$anon$1.run(TrapExit.scala:42)
+[0m[[0mdebug[0m] [0m	Thread run-main exited.[0m
+[0m[[0mdebug[0m] [0mWaiting for thread clientacceptor-akka.actor.default-dispatcher-4 to exit[0m
