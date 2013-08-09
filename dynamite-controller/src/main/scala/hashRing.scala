@@ -60,7 +60,7 @@ object hashRing {
 		if (serverContinuum contains serverPosition) println("Added server at port " + port + " at hash value " + serverPosition + ".") // Prints to terminal for debugging
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		migrateKVPs(serverPosition)
+		migrateKVPs(serverPosition) // NEED TO CLOSE THE SERVERSOCKET!!!
 
 		true
 	}
@@ -72,16 +72,16 @@ object hashRing {
 		val kvPosition = MurmurHash3.stringHash(key, seed) // Generates a position on the hash ring for the key-value pair
 
 		if (serverContinuum.size < 1) {
-			///////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////////
 			println("No server available to save KVP '" + key + "'.") // Prints to terminal for debugging
-			//////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////////
 
 			return false // Need to send a message to the client, not just false
 		}
 		
-		//////////////////////////////////////////////////////////////////////////
+		////////////////////////////////////////////////////////////////////////////
 		println("Generated hash value " + kvPosition + " for key '" + key + "'.") // Prints to terminal for debugging
-		//////////////////////////////////////////////////////////////////////////
+		////////////////////////////////////////////////////////////////////////////
 
 		var nearestServerLocation = serverContinuum.ceilingKey(kvPosition)
 		if (nearestServerLocation == null) nearestServerLocation = serverContinuum.firstKey
@@ -89,7 +89,15 @@ object hashRing {
 		val nearestServer = serverContinuum(nearestServerLocation)
 
 		val port = nearestServer.port
-		val sock = new Socket(host, port)
+		
+		try {
+			val sock = new Socket(host, port)
+		}
+		catch {
+			case ex: java.lang.NullPointerException => return false
+		}
+
+		val sock = new Socket(host, port) // I know this is bad, but I can't compile without this line, because of sock.close()
 		val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
 		val ps = new PrintStream(sock.getOutputStream())
 
@@ -135,7 +143,7 @@ object hashRing {
 		if (serverPosition == null) serverPosition = serverContinuum.firstKey
 
 		val serverPort = serverContinuum(serverPosition).port
-		val serverSock = new Socket(host, serverPort)
+		val serverSock = new Socket(host, serverPort) // NEED TO SET A TIMEOUT AND WRAP THIS IN A TRY-CATCH
 		val serverPS = new PrintStream(serverSock.getOutputStream())
 		val is = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
 

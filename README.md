@@ -1,11 +1,11 @@
 dynamite
 =========
 
-## By the Way
-- Everything is strings, all of the time, always... for now. The input? Strings. The keys? Strings. The values? Strings. *Literally everything is a string.* I'll generalize later.
-
 ## To Do
 1. If an added server goes offline, and the controller attempts to set/get a key from that server, the controller should be able to handle the java.lang.NullPointerException.
+	- On line 146 of hashRing, need to set a timeout value (need to do this for all sockets, really), then wrap it in a try-catch.
+	- Should add this to all sockets in all files. TRY-CATCH ALL THE THINGS!
+		- Probably set the timeout value in other file and read the timeout value from there, so I don't have to change everything manually.
 2. If you attempt to get a key before adding servers to the network, there should be an error message.
 3. If you attempt to set a key before adding servers to the network, there should be an appropriate error message (other than "false").
 4. If you attempt to add a server to the network that is "offline", there should be an appropriate error message (other than "false").
@@ -25,3 +25,6 @@ dynamite
 # Fault tolerance goals
 - When a server is killed (or removed from the network), its KVPs should be inaccessible, and any KVPs hashed to that server's section of the ring should be sent to another server. When the server comes back online (or disconnects from the network), keys hashed to the "backup" server should be migrated accordingly.
 	- If I go the server-killing route (vs. removing servers from the network), I need to make the datastore persistent.
+
+## By the Way
+- Everything is strings, all of the time, always... for now. The input? Strings. The keys? Strings. The values? Strings. *Literally everything is a string.* I'll generalize later.
