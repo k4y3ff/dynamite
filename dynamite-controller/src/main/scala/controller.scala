@@ -73,7 +73,7 @@ object controller {
 	  	case "get"			=> {
 	  		if (tokens.length < 2) return "Must enter a key."
 	  		else if (tokens.length > 2) return "Too many arguments."
-	  		hashRing.getValue(tokens(1)).toString
+	  		hashRing.getValue(tokens(1)) //.toString
 	  	}
 	  	case "listServers"	=> {
 	  		if (tokens.length > 1) return "Too many arguments."

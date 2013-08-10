@@ -8,6 +8,7 @@ import collection.mutable
 import java.util.TreeMap
 import scala.collection.JavaConversions._
 import java.net.Socket
+import java.net.InetSocketAddress
 import java.io.BufferedReader
 import java.io.PrintStream
 import java.io.InputStreamReader
@@ -38,7 +39,8 @@ object hashRing {
 
 		// Verify that the server socket is open before adding the server to the network
 		try {
-			val serverSock = new Socket(host, port.toInt)
+			val serverSock = new Socket()
+    		serverSock.connect(new InetSocketAddress(host, port.toInt), 5000)
 		}
 		catch {
 			case ex: java.net.ConnectException => {
@@ -89,15 +91,17 @@ object hashRing {
 		val nearestServer = serverContinuum(nearestServerLocation)
 
 		val port = nearestServer.port
+
+		val sock = new Socket()
 		
 		try {
-			val sock = new Socket(host, port)
+    		sock.connect(new InetSocketAddress(host, port), 5000)
 		}
 		catch {
 			case ex: java.lang.NullPointerException => return false
+			case ex: java.net.ConnectException => return false // Need to send a PROPER error message back
 		}
 
-		val sock = new Socket(host, port) // I know this is bad, but I can't compile without this line, because of sock.close()
 		val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
 		val ps = new PrintStream(sock.getOutputStream())
 
@@ -126,7 +130,18 @@ object hashRing {
 		if (serverPosition == null) serverPosition = serverContinuum.firstKey
 
 		val serverPort = serverContinuum(serverPosition).port
-		val serverSock = new Socket(host, serverPort)
+		// val serverSock = new Socket(host, serverPort)
+		
+		val serverSock = new Socket()
+		
+		try {
+    		serverSock.connect(new InetSocketAddress(host, serverPort), 5000)
+		}
+		catch {
+			case ex: java.lang.NullPointerException => return "false"
+			case ex: java.net.ConnectException => return "false" // Need to send a PROPER error message back
+		}
+
 		val serverPS = new PrintStream(serverSock.getOutputStream())
 		val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
 
@@ -143,7 +158,17 @@ object hashRing {
 		if (serverPosition == null) serverPosition = serverContinuum.firstKey
 
 		val serverPort = serverContinuum(serverPosition).port
-		val serverSock = new Socket(host, serverPort) // NEED TO SET A TIMEOUT AND WRAP THIS IN A TRY-CATCH
+		
+		val serverSock = new Socket
+
+		try {
+    		serverSock.connect(new InetSocketAddress(host, serverPort), 5000)
+		}
+		catch {
+			case ex: java.lang.NullPointerException => return "false" // NEED TO RETURN AN ACTUAL VALUE THAT INDICATES FAILURE
+			case ex: java.net.ConnectException => return "false" // Need to send a PROPER error message back
+
+		}
 		val serverPS = new PrintStream(serverSock.getOutputStream())
 		val is = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
 

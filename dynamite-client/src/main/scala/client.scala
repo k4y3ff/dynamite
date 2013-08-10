@@ -4,6 +4,7 @@ import akka.actor.ActorDSL._
 import akka.actor.ActorSystem
 
 import java.net.Socket
+import java.net.InetSocketAddress
 import java.io.BufferedReader
 import java.io.PrintStream
 import java.io.InputStreamReader
@@ -16,7 +17,10 @@ object client {
 
     val host = "localhost"
     val port = 4343
-    val sock = new Socket(host, port)
+
+    val sock = new Socket()
+    sock.connect(new InetSocketAddress(host, port), 15000)
+    
     val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
     val ps = new PrintStream(sock.getOutputStream())
     var flag = true
