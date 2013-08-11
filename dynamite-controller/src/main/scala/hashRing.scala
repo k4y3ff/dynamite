@@ -88,34 +88,33 @@ object hashRing {
 				val port = nearestServer.port
 				val sock = new Socket()
 
-				try {
-    				sock.connect(new InetSocketAddress(host, port), 5000)
-				}
-				catch {
-					case ex: java.lang.NullPointerException => return false
-					case ex: java.net.ConnectException => return false // Need to send a PROPER error message back
-				}
+				def add(): Boolean = {
+					val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+					val ps = new PrintStream(sock.getOutputStream())
 
-				val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-				val ps = new PrintStream(sock.getOutputStream())
+					// Double-checks that the key does not already exist in the database, with some assigned value
+					ps.println("get " + key)
+					var output = is.readLine // Blocking call
 
-				// Double-checks that the key does not already exist in the database, with some assigned value
-				ps.println("get " + key)
-				var output = is.readLine // Blocking call
+					output match {
+						case "false" => {
+							ps.println("set " + key + " " + value)
+							output = is.readLine // Blocking call
 
-				output match {
-					case "false" => {
-						ps.println("set " + key + " " + value)
-						output = is.readLine // Blocking call
+							sock.close()
 
-						sock.close()
+							if (output == "true") println("KVP '" + key + "' assigned to " + nearestServer.name + " at port " + port + ".")
 
-						if (output == "true") println("KVP '" + key + "' assigned to " + nearestServer.name + " at port " + port + ".")
-
-						true
+							true
+						}
+						
+						case _ => false // This is problematic, because someone might want to store the string 'false'.
 					}
-					
-					case _ => false // This is problematic, because someone might want to store the string 'false'.
+				}
+
+				Try(sock.connect(new InetSocketAddress(host, port), 5000)) match {
+					case Success(_) => add()
+					case Failure(_) => false
 				}
 			}
 		}
