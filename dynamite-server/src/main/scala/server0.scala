@@ -225,8 +225,7 @@ object server0 {
       case "migrate"    => migrate(tokens.slice(1,5)); return "true"
       case "set"        => set(tokens.slice(1,3))
       case other        => "Command not found."
-    }
-    
+    } 
   }
     
 }

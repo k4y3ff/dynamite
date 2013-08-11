@@ -59,6 +59,23 @@ object controller {
 	  val tokens = request.split(" ")
 	  val command = tokens(0)
 
+	  // def callController(tokens: String): String = tokens.toList match {
+	  //     case "addServer" :: port :: Nil   => hashRing.addServerToRing(port).toString
+	  //     case "addServer" :: xs            => if (xs.isEmpty) "Must enter a port number." else "Too many arguments."
+	  //     case "delete" :: key :: Nil       => hashRing.deleteKVP(key).toString
+	  //     case "delete" :: xs               => if (xs.isEmpty) "Must enter a key." else "Too many arguments."
+	  //     case "get" :: key :: Nil          => hashRing.getValue(key)
+	  //     case "get" :: xs                  => if (xs.isEmpty) "Must enter a key." else "Too many arguments."
+	  //     case "listServers" :: xs          => if (xs.isEmpty) hashRing.listServers().toString else "Too many arguments."
+	  //     case "set" :: key :: value        => hashRing.addPairToRing(key, value).toString
+	  //     case "set" :: key :: Nil          => "Must enter a value."
+	  //     case "set" :: xs                  => if (xs.isEmpty) "Must enter a key and value." else "Too many arguments."
+	  //     case "status" :: xs               => if (xs.isEmpty) hashRing.status() else "Too many arguments."
+	  //     case _                            => "Command not recognized."
+   //  	}
+
+   //  	callController(request)
+
 	  def callController(command:String): String = command match {
 	  	case "addServer" => {
 	  		tokens.length match {
