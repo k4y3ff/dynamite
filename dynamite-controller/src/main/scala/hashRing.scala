@@ -26,7 +26,7 @@ object hashRing {
 
 	val host = "localhost"
 
-	case class Server(port:Int, position:Integer, name:String)
+	case class Server(port:Int, position:Int, name:String)
 
 	val seed = 1234567890 // Manually set seed value used to hash strings with MurmurHash 3
 	
@@ -84,9 +84,8 @@ object hashRing {
 		////////////////////////////////////////////////////////////////////////////
 		println("Generated hash value " + kvPosition + " for key '" + key + "'.") // Prints to terminal for debugging
 		////////////////////////////////////////////////////////////////////////////
-
-		var nearestServerLocation = serverContinuum.ceilingKey(kvPosition)
-		if (nearestServerLocation == null) nearestServerLocation = serverContinuum.firstKey
+		
+		val nearestServerLocation = Option(serverContinuum.ceilingKey(kvPosition)).getOrElse(serverContinuum.firstKey)
 
 		val nearestServer = serverContinuum(nearestServerLocation)
 
@@ -125,10 +124,11 @@ object hashRing {
 	}
 
 	def deleteKVP(key:String): String = {
+		
 		val kvpPosition = MurmurHash3.stringHash(key, seed)
-		var serverPosition = serverContinuum.higherKey(kvpPosition)
-		if (serverPosition == null) serverPosition = serverContinuum.firstKey
-
+		
+		val serverPosition = Option(serverContinuum.higherKey(kvpPosition)).getOrElse(serverContinuum.firstKey)
+				
 		val serverPort = serverContinuum(serverPosition).port
 		// val serverSock = new Socket(host, serverPort)
 		
@@ -154,8 +154,8 @@ object hashRing {
 
 	def getValue(key:String): String = {
 		val keyPosition = MurmurHash3.stringHash(key, seed)
-		var serverPosition = serverContinuum.higherKey(keyPosition)
-		if (serverPosition == null) serverPosition = serverContinuum.firstKey
+
+		val serverPosition = Option(serverContinuum.higherKey(keyPosition)).getOrElse(serverContinuum.firstKey)
 
 		val serverPort = serverContinuum(serverPosition).port
 		
