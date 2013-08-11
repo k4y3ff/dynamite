@@ -1,15 +1,13 @@
-import akka.actor.ActorDSL._
 import akka.actor.ActorSystem
+import akka.actor.ActorDSL._ 
 
 import collection.mutable
 
-import java.net.ServerSocket
-import java.io.PrintStream
-import java.net.Socket
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.net.{ InetSocketAddress, ServerSocket, Socket }
+import java.io.{ BufferedReader, InputStreamReader, PrintStream }
 
 import scala.util.hashing.MurmurHash3
+import scala.util.{ Try, Success, Failure }
 
 object server0 {
 
@@ -127,75 +125,83 @@ object server0 {
     val newServerPort = tokens(3).toInt
 
     // Open connection to the new server
-    val newServerSock = new Socket(host, newServerPort)
-    val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))
-    val newServerPS = new PrintStream(newServerSock.getOutputStream())
+    
+    val newServerSock = new Socket()
 
-    if (highHashValueStr == "end") { // SHOULD BE USING PATTERN MATCHING!
-      val lowHashValue = lowHashValueStr.toInt
-
-      for((key, value) <- kvStore) {
-        val keyHashValue = MurmurHash3.stringHash(key, seed)
-        
-        if (keyHashValue > lowHashValue) {
-          newServerPS.println("set " + key + " " + value)
-          
-          val confirmation = newServerIS.readLine // Blocking call == bad?
-          
-          if (confirmation == "true") {
-            val args = new Array[String](1)
-            args(0) = key
-            delete(args)
-          }
-        }
-
-      }
+    Try(newServerSock.connect(new InetSocketAddress(host, newServerPort), 5000)) match {
+      case Success(_) => migrateKVPs()
+      case Failure(_) => // NEED TO HAVE AN ACTUAL FAILURE CASE HERE
     }
 
-    else if (lowHashValueStr == "beginning") {
-      val highHashValue = highHashValueStr.toInt
+    def migrateKVPs() {
+      val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))
+      val newServerPS = new PrintStream(newServerSock.getOutputStream())
 
-      for ((key, value) <- kvStore) {
-        val keyHashValue = MurmurHash3.stringHash(key, seed)
-        
-        if (keyHashValue <= highHashValue) {
-          newServerPS.println("set " + key + " " + value)
-          
-          val confirmation = newServerIS.readLine
-          
-          if (confirmation == "true") {
-            val args = new Array[String](1)
-            args(0) = key
-            delete(args)
-          }
-        }
-      }
-    }
+      if (highHashValueStr == "end") { // SHOULD BE USING PATTERN MATCHING!
+        val lowHashValue = lowHashValueStr.toInt
 
-    else {
-      val lowHashValue = lowHashValueStr.toInt
-      val highHashValue = highHashValueStr.toInt
-
-      for((key, value) <- kvStore) {
+        for((key, value) <- kvStore) {
           val keyHashValue = MurmurHash3.stringHash(key, seed)
-
-          if (keyHashValue <= highHashValue && keyHashValue > lowHashValue) {
+          
+          if (keyHashValue > lowHashValue) {
             newServerPS.println("set " + key + " " + value)
-
-            val confirmation = newServerIS.readLine
-
+            
+            val confirmation = newServerIS.readLine // Blocking call == bad?
+            
             if (confirmation == "true") {
               val args = new Array[String](1)
               args(0) = key
               delete(args)
             }
           }
+
+        }
       }
+
+      else if (lowHashValueStr == "beginning") {
+        val highHashValue = highHashValueStr.toInt
+
+        for ((key, value) <- kvStore) {
+          val keyHashValue = MurmurHash3.stringHash(key, seed)
+          
+          if (keyHashValue <= highHashValue) {
+            newServerPS.println("set " + key + " " + value)
+            
+            val confirmation = newServerIS.readLine
+            
+            if (confirmation == "true") {
+              val args = new Array[String](1)
+              args(0) = key
+              delete(args)
+            }
+          }
+        }
+      }
+
+      else {
+        val lowHashValue = lowHashValueStr.toInt
+        val highHashValue = highHashValueStr.toInt
+
+        for((key, value) <- kvStore) {
+            val keyHashValue = MurmurHash3.stringHash(key, seed)
+
+            if (keyHashValue <= highHashValue && keyHashValue > lowHashValue) {
+              newServerPS.println("set " + key + " " + value)
+
+              val confirmation = newServerIS.readLine
+
+              if (confirmation == "true") {
+                val args = new Array[String](1)
+                args(0) = key
+                delete(args)
+              }
+            }
+        }
+      }
+
+      // Close the server socket
+      newServerSock.close()
     }
-
-    // Close the server socket
-    newServerSock.close()
-
   }
 
   // Adds a new key-value pair to kvStore
@@ -218,9 +224,9 @@ object server0 {
     val command = tokens(0)
     command match {
       case "countKVPs"  => kvStore.size.toString
-      case "delete"     => delete(tokens.slice(1,3)); return "true"
+      case "delete"     => delete(tokens.slice(1,3)); "true"
       case "get"        => get(tokens.slice(1,2))
-      case "migrate"    => migrate(tokens.slice(1,5)); return "true"
+      case "migrate"    => migrate(tokens.slice(1,5)); "true"
       case "set"        => set(tokens.slice(1,3))
       case other        => "Command not found."
     } 
