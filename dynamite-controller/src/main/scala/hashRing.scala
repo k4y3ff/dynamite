@@ -41,32 +41,30 @@ object hashRing {
 		// Verify that the server socket is open before adding the server to the network
 		val serverSock = new Socket()
 
-		try {
-    		serverSock.connect(new InetSocketAddress(host, port.toInt), 5000)
-		}
-		catch {
-			case ex: java.net.ConnectException => {
-				return false // Need to send a PROPER error message back
+		def add(): Boolean = {
+			var serverPosition = MurmurHash3.stringHash(port, seed)
+
+			//So long as the server position is not unique (i.e. is occupied by another server), generates a new position
+			while(serverContinuum containsKey serverPosition) {
+				serverPosition = MurmurHash3.stringHash(port, seed)
 			}
-		}
 
-		var serverPosition = MurmurHash3.stringHash(port, seed)
+			val server = Server(port.toInt, serverPosition, serverName)
+			serverContinuum(serverPosition) = server
 
-		// So long as the server position is not unique (i.e. is occupied by another server), generates a new position
-		while ((serverContinuum containsKey serverPosition) == true) { 
-			serverPosition = MurmurHash3.stringHash(port, seed)
-		}
+			if (serverContinuum contains serverPosition) println("Added server at port " + port + " at hash value " + serverPosition + ".")
 
-		val server = Server(port.toInt, serverPosition, serverName)
-		serverContinuum(serverPosition) = server
+			migrateKVPs(serverPosition) // NEED TO CLOSE THE SERVERSOCKET!
 
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		if (serverContinuum contains serverPosition) println("Added server at port " + port + " at hash value " + serverPosition + ".") // Prints to terminal for debugging
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			serverSock.close()
 
-		migrateKVPs(serverPosition) // NEED TO CLOSE THE SERVERSOCKET!!!
+			true
+		}		
 
-		true
+		Try(serverSock.connect(new InetSocketAddress(host, port.toInt), 5000)) match {
+			case Success(_) => add()
+			case Failure(_) => false
+		} 
 	}
 
 	// Generates a position on the hash ring for a key-value pair, iterates over the Map of server locations, 

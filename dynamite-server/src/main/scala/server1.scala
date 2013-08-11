@@ -133,7 +133,7 @@ object server1 {
       case Failure(_) => // NEED TO HAVE AN ACTUAL FAILURE CASE HERE
     }
 
-    def migrateKVPs() {
+    def migrateKVPs(): Unit = {
       val newServerIS = new BufferedReader(new InputStreamReader(newServerSock.getInputStream()))
       val newServerPS = new PrintStream(newServerSock.getOutputStream())
 
