@@ -25,11 +25,11 @@ object server1 {
     
     val coordinators = new mutable.ArrayBuffer[Coordinator] with mutable.SynchronizedBuffer[Coordinator] {}
 
+    val ss = new ServerSocket(4010)
+    
     val coordinatorAcceptor = actor(coordinatorSystem)(new Act {
       become {
         case true => {
-          val ss = new ServerSocket(4010)
-
           while(true) {
             val sock = ss.accept()
             val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
@@ -72,6 +72,8 @@ object server1 {
             val terminalInput = readLine
             if (terminalInput == "disconnect") {
               coordinatorSystem.shutdown
+              ss.close()
+
 
               println("Server offline. \n")
             }
@@ -196,8 +198,6 @@ object server1 {
 
   }
 
-
-
   // Adds a new key-value pair to kvStore
   def set(tokens:Array[String]): String = {
     kvStore(tokens(0)) = tokens(1)
@@ -223,8 +223,7 @@ object server1 {
       case "migrate"    => migrate(tokens.slice(1,5)); return "true"
       case "set"        => set(tokens.slice(1,3))
       case other        => "Command not found."
-    }
-    
+    } 
   }
     
 }

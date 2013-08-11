@@ -198,8 +198,6 @@ object server0 {
 
   }
 
-
-
   // Adds a new key-value pair to kvStore
   def set(tokens:Array[String]): String = {
     kvStore(tokens(0)) = tokens(1)
