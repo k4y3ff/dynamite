@@ -60,36 +60,48 @@ object controller {
 	  val command = tokens(0)
 
 	  def callController(command:String): String = command match {
-	  	case "addServer" 	=> {
-	  		if (tokens.length < 2) return "Must enter a port number."
-	  		else if (tokens.length > 2) return "Too many arguments." // What should I say instead of this?
-	  		hashRing.addServerToRing(tokens(1)).toString
+	  	case "addServer" => {
+	  		tokens.length match {
+	  			case 1 => "Must enter a port number."
+	  			case 2 => hashRing.addServerToRing(tokens(1)).toString
+	  			case _ => "Too many arguments."
+	  		}
 	  	}
-	  	case "delete"		=> {
-	  		if (tokens.length < 2) return "Must enter a key."
-	  		else if (tokens.length > 2) return "Too many arguments."
-	  		hashRing.deleteKVP(tokens(1)).toString
+	  	case "delete" => {
+	  		tokens.length match {
+	  			case 1 => "Must enter a key."
+	  			case 2 => hashRing.deleteKVP(tokens(1)).toString
+	  			case _ => "Too many arguments."
+	  		}
 	  	}
-	  	case "get"			=> {
-	  		if (tokens.length < 2) return "Must enter a key."
-	  		else if (tokens.length > 2) return "Too many arguments."
-	  		hashRing.getValue(tokens(1)) //.toString
+	  	case "get" => {
+	  		tokens.length match {
+	  			case 1 => "Must enter a key."
+	  			case 2 => hashRing.getValue(tokens(1))
+	  			case _ => "Too many arguments."
+	  		}
 	  	}
-	  	case "listServers"	=> {
-	  		if (tokens.length > 1) return "Too many arguments."
-	  		hashRing.listServers().toString
+	  	case "listServers" => {
+	  		tokens.length match {
+	  			case 1 => hashRing.listServers().toString
+	  			case _ => "Too many arguments."
+	  		}
 	  	}
-	  	case "set"			=> {
-	  		if (tokens.length == 1) return "Must enter a key and value."
-	  		else if (tokens.length == 2) return "Must enter a value."
-	  		else if (tokens.length > 3) return "Too many arguments."
-	  		hashRing.addPairToRing(tokens(1), tokens(2)).toString
+	  	case "set" => {
+	  		tokens.length match {
+	  			case 1 => "Must enter a key and value."
+	  			case 2 => "Must enter a value."
+	  			case 3 => hashRing.addPairToRing(tokens(1), tokens(2)).toString
+	  			case _ => "Too many arguments."
+	  		}
 	  	}
-	  	case "status"		=> {
-	  		if (tokens.length > 1) return "Too many arguments."
-	  		hashRing.status()
+	  	case "status" => {
+	  		tokens.length match {
+	  			case 1 => hashRing.status()
+	  			case _ => "Too many arguments."
+	  		}
 	  	}
-	  	case _				=> "Invalid command."
+	  	case _	=> "Invalid command."
 	  }
 
 	  callController(command)

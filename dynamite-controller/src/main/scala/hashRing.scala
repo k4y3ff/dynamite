@@ -130,8 +130,7 @@ object hashRing {
 		val serverPosition = Option(serverContinuum.higherKey(kvpPosition)).getOrElse(serverContinuum.firstKey)
 				
 		val serverPort = serverContinuum(serverPosition).port
-		// val serverSock = new Socket(host, serverPort)
-		
+
 		val serverSock = new Socket()
 		
 		try {
@@ -182,7 +181,7 @@ object hashRing {
 	// Returns list of servers and their locations on the ring
 	def listServers(): TreeMap[Integer, Server] = serverContinuum
 	
-	def migrateKVPs(newServerPosition:Integer): Unit = {
+	def migrateKVPs(newServerPosition:Integer): Unit = { // NEEDS TO RETURN A BOOLEAN BEFORE ADDING TIMEOUT MAX, TRY-CATCH, ETC.
 		if(serverContinuum.size > 1) {
 
 			/*
@@ -270,28 +269,37 @@ object hashRing {
 			statusMessage += server.name + "\n--------------------\nPort: " + server.port + "\nHash Location: " + location + "\n"
 
 			val serverPort = server.port
-			val serverSock = new Socket(host, serverPort)
-			val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
-			val serverPS = new PrintStream(serverSock.getOutputStream())
 
-			serverPS.println("countKVPs")
-			val kvpCount = serverIS.readLine // Blocking call
+			val serverSock = new Socket()
 
-			serverSock.close()
+			try {
+				serverSock.connect(new InetSocketAddress(host, serverPort), 5000)
+					val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
+				val serverPS = new PrintStream(serverSock.getOutputStream())
 
-			statusMessage += "KVP Count: " + kvpCount + "\n"
+				serverPS.println("countKVPs")
+				val kvpCount = serverIS.readLine // Blocking call
 
-			val kvpLowValue = Option(serverContinuum.lowerKey(location))
-			
-			kvpLowValue match {
-				case None => {
-					val kvpRange = "(-∞, " + location + "]" + " U (" + serverContinuum.lastKey + ", " + "∞)"
-					statusMessage += "KVP Range: " + kvpRange + "\n\n"
+				serverSock.close()
+
+				statusMessage += "KVP Count: " + kvpCount + "\n"
+
+				val kvpLowValue = Option(serverContinuum.lowerKey(location))
+				
+				kvpLowValue match {
+					case None => {
+						val kvpRange = "(-∞, " + location + "]" + " U (" + serverContinuum.lastKey + ", " + "∞)"
+						statusMessage += "KVP Range: " + kvpRange + "\n\n"
+					}
+					case Some(kvpLowValue) => {
+						val kvpRange = "(" + kvpLowValue + ", " + location + "]"
+						statusMessage += "KVP Range: " + kvpRange + "\n\n"
+					}
 				}
-				case Some(kvpLowValue) => {
-					val kvpRange = "(" + kvpLowValue + ", " + location + "]"
-					statusMessage += "KVP Range: " + kvpRange + "\n\n"
-				}
+			}
+			catch {
+				case ex: java.lang.NullPointerException => statusMessage += "OFFLINE\n\n"
+				case ex: java.net.ConnectException => statusMessage += "OFFLINE\n\n"
 			}
 
 		}
