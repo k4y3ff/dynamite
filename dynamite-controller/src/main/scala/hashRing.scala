@@ -124,26 +124,13 @@ object hashRing {
 	}
 
 	def deleteKVP(key: String): String = {
-		
+
 		val kvpPosition = MurmurHash3.stringHash(key, seed)
 		val serverPosition = Option(serverContinuum.higherKey(kvpPosition)).getOrElse(serverContinuum.firstKey)
 				
 		val serverPort = serverContinuum(serverPosition).port
 		val serverSock = new Socket()
-
-		Try(serverSock.connect(new InetSocketAddress(host, serverPort), 5000)) match {
-			case Success(_) => delete()
-			case Failure(_) => "false"
-		}
-
-		// try {
-  //   		serverSock.connect(new InetSocketAddress(host, serverPort), 5000)
-		// }
-		// catch {
-		// 	case ex: java.lang.NullPointerException => return "false"
-		// 	case ex: java.net.ConnectException => return "false" // Need to send a PROPER error message back
-		// }
-
+			
 		def delete(): String = {
 			val serverPS = new PrintStream(serverSock.getOutputStream())
 			val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
@@ -155,14 +142,10 @@ object hashRing {
 			confirmation
 		}
 
-		// val serverPS = new PrintStream(serverSock.getOutputStream())
-		// val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
-
-		// serverPS.println("delete " + key)
-		// val confirmation = serverIS.readLine // Blocking call
-		// serverSock.close()
-
-		// confirmation
+		Try(serverSock.connect(new InetSocketAddress(host, serverPort), 5000)) match {
+			case Success(_) => delete()
+			case Failure(_) => "false"
+		}
 	}
 
 	def getValue(key:String): String = {

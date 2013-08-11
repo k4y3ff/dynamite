@@ -25,11 +25,11 @@ object server0 {
     
     val coordinators = new mutable.ArrayBuffer[Coordinator] with mutable.SynchronizedBuffer[Coordinator] {}
 
+    val ss = new ServerSocket(4000)
+    
     val coordinatorAcceptor = actor(coordinatorSystem)(new Act {
       become {
         case true => {
-          val ss = new ServerSocket(4000)
-
           while(true) {
             val sock = ss.accept()
             val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
@@ -72,6 +72,8 @@ object server0 {
             val terminalInput = readLine
             if (terminalInput == "disconnect") {
               coordinatorSystem.shutdown
+              ss.close()
+
 
               println("Server offline. \n")
             }
