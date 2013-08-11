@@ -38,8 +38,9 @@ object hashRing {
 		val serverName = "server" + serverContinuum.size.toString
 
 		// Verify that the server socket is open before adding the server to the network
+		val serverSock = new Socket()
+
 		try {
-			val serverSock = new Socket()
     		serverSock.connect(new InetSocketAddress(host, port.toInt), 5000)
 		}
 		catch {
@@ -73,54 +74,52 @@ object hashRing {
 
 		val kvPosition = MurmurHash3.stringHash(key, seed) // Generates a position on the hash ring for the key-value pair
 
-		if (serverContinuum.size < 1) {
-			////////////////////////////////////////////////////////////
-			println("No server available to save KVP '" + key + "'.") // Prints to terminal for debugging
-			////////////////////////////////////////////////////////////
+		serverContinuum.size match {
+			case 0 => {
+				println("No server available to save KVP '" + key + "'.")
+				false
+			}
 
-			return false // Need to send a message to the client, not just false
+			case _ => {
+				println("Generated hash value " + kvPosition + " for key " + key + "'.")
+
+				val nearestServerLocation = Option(serverContinuum.ceilingKey(kvPosition)).getOrElse(serverContinuum.firstKey)
+				val nearestServer = serverContinuum(nearestServerLocation)
+
+				val port = nearestServer.port
+				val sock = new Socket()
+
+				try {
+    				sock.connect(new InetSocketAddress(host, port), 5000)
+				}
+				catch {
+					case ex: java.lang.NullPointerException => return false
+					case ex: java.net.ConnectException => return false // Need to send a PROPER error message back
+				}
+
+				val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+				val ps = new PrintStream(sock.getOutputStream())
+
+				// Double-checks that the key does not already exist in the database, with some assigned value
+				ps.println("get " + key)
+				var output = is.readLine // Blocking call
+
+				output match {
+					case "false" => {
+						ps.println("set " + key + " " + value)
+						output = is.readLine // Blocking call
+
+						sock.close()
+
+						if (output == "true") println("KVP '" + key + "' assigned to " + nearestServer.name + " at port " + port + ".")
+
+						true
+					}
+					
+					case _ => false // This is problematic, because someone might want to store the string 'false'.
+				}
+			}
 		}
-		
-		////////////////////////////////////////////////////////////////////////////
-		println("Generated hash value " + kvPosition + " for key '" + key + "'.") // Prints to terminal for debugging
-		////////////////////////////////////////////////////////////////////////////
-		
-		val nearestServerLocation = Option(serverContinuum.ceilingKey(kvPosition)).getOrElse(serverContinuum.firstKey)
-
-		val nearestServer = serverContinuum(nearestServerLocation)
-
-		val port = nearestServer.port
-
-		val sock = new Socket()
-		
-		try {
-    		sock.connect(new InetSocketAddress(host, port), 5000)
-		}
-		catch {
-			case ex: java.lang.NullPointerException => return false
-			case ex: java.net.ConnectException => return false // Need to send a PROPER error message back
-		}
-
-		val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-		val ps = new PrintStream(sock.getOutputStream())
-
-		// Double-checks that the key does not already exist in the database, with some assigned value
-		ps.println("get " + key)
-		var output = is.readLine // Blocking call
-
-		if (output != "false") return false // This is problematic, because someone might want to store the string "false"
-
-		ps.println("set " + key + " " + value)
-		output = is.readLine // Blocking call
-		sock.close()
-
-		if (output == "true") {
-			////////////////////////////////////////////////////////////////////////////////////////////
-			println("KVP '" + key + "' assigned to " + nearestServer.name + " at port " + port + ".") // Prints to terminal for debugging
-			////////////////////////////////////////////////////////////////////////////////////////////
-		}
-
-		true
 	}
 
 	def deleteKVP(key:String): String = {
