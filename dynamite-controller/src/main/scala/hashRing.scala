@@ -185,66 +185,75 @@ object hashRing {
 	def migrateKVPs(newServerPosition:Integer): Unit = {
 		if(serverContinuum.size > 1) {
 
-			// Determine location of previous node
-			var previousServerPosition = serverContinuum.lowerKey(newServerPosition)
-
-			// Determine location of next node
-			var nextServerPosition = serverContinuum.higherKey(newServerPosition)
-
 			/*
 			/ There's almost certainly a way to write the hash ring without a case-by-case structure, but 
 			/ at the moment, I'm not sure how.
 			*/
 
-			// Case 1: Location of previous location == null:
-			if (previousServerPosition == null) { // SHOULD BE USING PATTERN MATCHING!
+			// Determine location of previous node
+			val previousServerPosition = Option(serverContinuum.lowerKey(newServerPosition))
 
-				// Get port of new server
-				val newServerPort = serverContinuum(newServerPosition).port
+			// Determine location of next node
+			val nextServerPosition = Option(serverContinuum.higherKey(newServerPosition))
 
-				// Open connection to old server that the keys will be moved from
-				val oldServerPort = serverContinuum(nextServerPosition).port
-				val oldServerSock = new Socket(host, oldServerPort)
-				val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))				
-				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
+			previousServerPosition match {
+				
+				// Case 1: The new server is the "first" server on the hash ring, clockwise from 12:00
+				case None => {
+					
+					// Get port of new server
+					val newServerPort = serverContinuum(newServerPosition).port
 
-				// Tell the old server to migrate the keys hashed between the "last" server on the ring and the "end" of the ring to the new server
-				oldServerPS.println("migrate " + serverContinuum.lastKey + " " + "end" + " " + seed + " " + newServerPort)
-				// Tell the old server to migrate the keys hashed between the "beginning" of the ring and the new server's location to the new server
-				oldServerPS.println("migrate " + "beginning" + " " + newServerPosition + seed + newServerPort)
+					// Open connection to old server that the keys will be moved from
+					val oldServerPort = serverContinuum(nextServerPosition.get).port
+					val oldServerSock = new Socket(host, oldServerPort)
+					val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))
+					val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
 
-				oldServerSock.close()
-			}
+					// Migrate the keys hashed between the "last" server on the ring and the "end" of the ring from the old server to the new server
+					oldServerPS.println("migrate " + serverContinuum.lastKey + " " + "end" + " " + seed + " " + newServerPort)
+					// Migrate the keys hashed between the "beginning" of the ring and the new server's location from the old server to the new server
+					oldServerPS.println("migrate " + "beginning" + " " + newServerPosition + seed + newServerPort)
 
-			// Case 2: Location of next location == null:
-			else if (nextServerPosition == null) { // SHOULD BE USING PATTERN MATCHING!
+					oldServerSock.close()
+				}
 
-				val newServerPort = serverContinuum(newServerPosition).port
+				case Some(previousServerPosition) => {
 
-				// Open connection to old server that the keys will be moved from
-				val oldServerPort = serverContinuum(serverContinuum.firstKey).port
-				val oldServerSock = new Socket(host, oldServerPort)
-				val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))				
-				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
+					nextServerPosition match {
 
-				// Tell the old server to migrate the keys hashed between the previous server on the ring and the new server on the ring to the new server
-				oldServerPS.println("migrate " + previousServerPosition + " " + newServerPosition + " " + seed + " " + newServerPort)
+						// Case 2: The new server is the "last" server on the hash ring, clockwise from 12:00
+						case None => {
 
-				oldServerSock.close()
-			}
+							val newServerPort = serverContinuum(newServerPosition).port
 
-			// Case 3
-			else { // SHOULD BE USING PATTERN MATCHING!
+							// Open connection to old server that the keys will be moved from
+							val oldServerPort = serverContinuum(serverContinuum.firstKey).port
+							val oldServerSock = new Socket(host, oldServerPort)
+							val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))
+							val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
 
-				// Open connection to old server that the keys will be moved from
-				val oldServerPort = serverContinuum(serverContinuum.firstKey).port
-				val oldServerSock = new Socket(host, oldServerPort)
-				val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))
-				val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
+							// Migrate the keys hashed between the previous server on the ring and the new server on the ring from the old server to the new server
+							oldServerPS.println("migrate " + previousServerPosition + " " + newServerPosition + " " + seed + " " + newServerPort)
 
-				oldServerPS.println("migrate " + previousServerPosition + " " + newServerPosition + " " + seed + " " + newServerPosition)
+							oldServerSock.close()
+						}
 
-				oldServerSock.close()
+						// Case 3: The new server is neither the "first" nor the "last" server on the hash ring, clockwise from 12:00
+						case Some(nextServerPosition) => {
+
+							val oldServerPort = serverContinuum(serverContinuum.firstKey).port
+							val oldServerSock = new Socket(host, oldServerPort)
+							val oldServerIS = new BufferedReader(new InputStreamReader(oldServerSock.getInputStream()))
+							val oldServerPS = new PrintStream(oldServerSock.getOutputStream())
+
+							oldServerPS.println("migrate " + previousServerPosition + " " + newServerPosition + " " + seed + " " + newServerPosition)
+
+							oldServerSock.close()
+
+						}
+					}
+				}
 			}
 		}
 	}
