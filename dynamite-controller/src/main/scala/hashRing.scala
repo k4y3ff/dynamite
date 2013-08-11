@@ -261,6 +261,11 @@ object hashRing {
 	def status(): String = {
 		var statusMessage = "\nStatus\n====================\n"
 
+		if (serverContinuum.size < 1) {
+			statusMessage += "No servers connected.\n\n"
+			return statusMessage
+		}
+
 		for ((location, server) <- serverContinuum) {
 			statusMessage += server.name + "\n--------------------\nPort: " + server.port + "\nHash Location: " + location + "\n"
 
@@ -278,14 +283,19 @@ object hashRing {
 
 			val kvpLowValue = Option(serverContinuum.lowerKey(location))
 			
-			var kvpRange = "" // The compiler won't allow me to define kvpRange within the if/else block, for some reason...?
+			// var kvpRange = "" // The compiler won't allow me to define kvpRange within the if/else block, for some reason...?
 
 			kvpLowValue match {
-				case None => kvpRange = "(-∞, " + location + "]" + " U (" + serverContinuum.lastKey + ", " + "∞)"
-				case Some(kvpLowValue) => kvpRange = "(" + kvpLowValue + ", " + location + "]"
+				case None => {
+					val kvpRange = "(-∞, " + location + "]" + " U (" + serverContinuum.lastKey + ", " + "∞)"
+					statusMessage += "KVP Range: " + kvpRange + "\n\n"
+				}
+				case Some(kvpLowValue) => {
+					val kvpRange = "(" + kvpLowValue + ", " + location + "]"
+					statusMessage += "KVP Range: " + kvpRange + "\n\n"
+				}
 			}
 
-			statusMessage += "KVP Range: " + kvpRange + "\n\n"
 		}
 
 		statusMessage
