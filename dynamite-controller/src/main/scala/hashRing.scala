@@ -283,8 +283,6 @@ object hashRing {
 
 			val kvpLowValue = Option(serverContinuum.lowerKey(location))
 			
-			// var kvpRange = "" // The compiler won't allow me to define kvpRange within the if/else block, for some reason...?
-
 			kvpLowValue match {
 				case None => {
 					val kvpRange = "(-∞, " + location + "]" + " U (" + serverContinuum.lastKey + ", " + "∞)"
