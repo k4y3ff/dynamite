@@ -16,6 +16,7 @@ import java.io.InputStreamReader
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 import scala.util.hashing.MurmurHash3
+import scala.util.{Try, Success, Failure}
 
 /*
 / NOTE:
@@ -122,32 +123,46 @@ object hashRing {
 		}
 	}
 
-	def deleteKVP(key:String): String = {
+	def deleteKVP(key: String): String = {
 		
 		val kvpPosition = MurmurHash3.stringHash(key, seed)
-		
 		val serverPosition = Option(serverContinuum.higherKey(kvpPosition)).getOrElse(serverContinuum.firstKey)
 				
 		val serverPort = serverContinuum(serverPosition).port
-
 		val serverSock = new Socket()
-		
-		try {
-    		serverSock.connect(new InetSocketAddress(host, serverPort), 5000)
-		}
-		catch {
-			case ex: java.lang.NullPointerException => return "false"
-			case ex: java.net.ConnectException => return "false" // Need to send a PROPER error message back
+
+		Try(serverSock.connect(new InetSocketAddress(host, serverPort), 5000)) match {
+			case Success(_) => delete()
+			case Failure(_) => "false"
 		}
 
-		val serverPS = new PrintStream(serverSock.getOutputStream())
-		val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
+		// try {
+  //   		serverSock.connect(new InetSocketAddress(host, serverPort), 5000)
+		// }
+		// catch {
+		// 	case ex: java.lang.NullPointerException => return "false"
+		// 	case ex: java.net.ConnectException => return "false" // Need to send a PROPER error message back
+		// }
 
-		serverPS.println("delete " + key)
-		val confirmation = serverIS.readLine // Blocking call
-		serverSock.close()
+		def delete(): String = {
+			val serverPS = new PrintStream(serverSock.getOutputStream())
+			val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
 
-		confirmation
+			serverPS.println("delete " + key)
+			val confirmation = serverIS.readLine // Blocking call
+			serverSock.close()
+
+			confirmation
+		}
+
+		// val serverPS = new PrintStream(serverSock.getOutputStream())
+		// val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
+
+		// serverPS.println("delete " + key)
+		// val confirmation = serverIS.readLine // Blocking call
+		// serverSock.close()
+
+		// confirmation
 	}
 
 	def getValue(key:String): String = {
@@ -273,7 +288,7 @@ object hashRing {
 
 			try {
 				serverSock.connect(new InetSocketAddress(host, serverPort), 5000)
-					val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
+				val serverIS = new BufferedReader(new InputStreamReader(serverSock.getInputStream()))
 				val serverPS = new PrintStream(serverSock.getOutputStream())
 
 				serverPS.println("countKVPs")

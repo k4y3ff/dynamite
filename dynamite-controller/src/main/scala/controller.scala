@@ -102,7 +102,7 @@ object controller {
 	  		}
 	  	}
 	  	case _	=> "Invalid command."
-	  }
+	  }	  
 
 	  callController(command)
 	}
