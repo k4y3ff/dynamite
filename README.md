@@ -16,6 +16,8 @@ dynamite
 8. Add error message so that if a user tries to set the value for a key that already exists, it will prompt the user to update, instead...? Maybe.
 9. Add an update command... maybe. Or, just change the set command.
 10. sbt doesn't allow backspaces in the terminal? Probably should write a proper client....
+11. Add input checking for addServer command.
+	- Second token should be an int
 
 # App goals
 - Write a task list (or something) that uses the database as its backend.
