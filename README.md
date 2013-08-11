@@ -2,10 +2,8 @@ dynamite
 =========
 
 ## To Do
-1. If an added server goes offline, and the controller attempts to set/get a key from that server, the controller should be able to handle the java.lang.NullPointerException.
-	- On line 146 of hashRing, need to set a timeout value (need to do this for all sockets, really), then wrap it in a try-catch.
-	- Should add this to all sockets in all files. TRY-CATCH ALL THE THINGS!
-		- Probably set the timeout value in other file and read the timeout value from there, so I don't have to change everything manually.
+1. If an added server goes offline, and the controller attempts to INITIALLY set a key at that server, the controller should send the KVP to another server temporarily. That server should ping the other server until it comes back online, then migrate all temporarily KVPs accordingly.
+	- Will need to figure out how to overwrite/merge existing keys later.
 2. Fix hashRing.migrate (see comment).
 3. If you attempt to get a key before adding servers to the network, there should be an error message.
 4. If you attempt to set a key before adding servers to the network, there should be an appropriate error message (other than "false").
