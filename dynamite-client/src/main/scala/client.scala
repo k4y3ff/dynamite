@@ -21,29 +21,42 @@ object client {
 		implicit val system = ActorSystem()
 
 		val sock = new Socket()
-
-		sock.setKeepAlive(true)
+		println("Created new socket.")
 		
-		println(sock.getSoTimeout)
-		println(sock.getKeepAlive)
-		println(sock.getSoLinger)
-
+		sock.setKeepAlive(true)
+		println("Set socket keep-alive to true.")
+		
+		println("Socket timeout value: " + sock.getSoTimeout + ".")
+		println("Socket keep-alive: " + sock.getKeepAlive + ".")
+		println("Socket linger: " + sock.getSoLinger + ".")
+		
+		println("Trying to connect socket to server socket on host '" + host + "' at port " + port + " with timeout value of 15000.")
 		Try(sock.connect(new InetSocketAddress(host, port), 15000)) match {
-			case Success(_) => sendAndReceive()
+			case Success(_) => {
+				println("Successfully connected to server socket on host '" + host + "' at port " + port + ".")
+				println("Calling sendAndReceive function.")
+				sendAndReceive()
+			}
 			case Failure(_) => println("Database offline.\n")
 		}
 
 		def sendAndReceive(): Unit = {
-			val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-			val ps = new PrintStream(sock.getOutputStream())
+			println("sendAndReceive function has been called.")
 
-			println(sock.getSoTimeout)
-			println(sock.getKeepAlive)
-			println(sock.getSoLinger)
+			val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+			println("Created new InputStream.")
+			val ps = new PrintStream(sock.getOutputStream())
+			println("Created new PrintStream.")
+
+			println("Socket timeout value: " + sock.getSoTimeout + ".")
+			println("Socket keep-alive: " + sock.getKeepAlive + ".")
+			println("Socket linger: " + sock.getSoLinger + ".")
 
 			ps.println("client")
+			println("Sent message to controller to establish self as client.")
 
 			var flag = true
+			println("Set flag equal to " + flag.toString + ".")
 
 			val outputer = actor(new Act {
 
@@ -61,6 +74,7 @@ object client {
 			})
 
 			outputer ! true
+			println("Akka actor 'outputer' activated.")
 
 			while (flag) {
 				val input = readLine

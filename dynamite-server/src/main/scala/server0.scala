@@ -116,6 +116,7 @@ object server0 {
 
 			case false => {
 				val sock = new Socket() // Potential point of failure
+				sock.setKeepAlive(true)
 
 				Try(sock.connect(new InetSocketAddress(host, controllerPort), 5000)) match {
 					case Success(_) => {
