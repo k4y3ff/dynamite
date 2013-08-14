@@ -1,4 +1,4 @@
-package main
+package client
 
 import akka.actor.ActorDSL._
 import akka.actor.ActorSystem
@@ -9,43 +9,71 @@ import java.io.BufferedReader
 import java.io.PrintStream
 import java.io.InputStreamReader
 
+import scala.util.{ Try, Success, Failure }
+
 object client {
+	
+	val host = "localhost"
+	val port = 4343
 
-  def main(args: Array[String]): Unit = {
+	def main(args: Array[String]): Unit = {
+		
+		implicit val system = ActorSystem()
 
-    implicit val system = ActorSystem("outputer")
+		val sock = new Socket()
 
-    val host = "localhost"
-    val port = 4343
+		sock.setKeepAlive(true)
+		
+		println(sock.getSoTimeout)
+		println(sock.getKeepAlive)
+		println(sock.getSoLinger)
 
-    val sock = new Socket()
-    sock.connect(new InetSocketAddress(host, port), 15000)
-    
-    val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-    val ps = new PrintStream(sock.getOutputStream())
-    var flag = true
+		Try(sock.connect(new InetSocketAddress(host, port), 15000)) match {
+			case Success(_) => sendAndReceive()
+			case Failure(_) => println("Database offline.\n")
+		}
 
-    val outputer = actor(new Act {
-      become {
-        case true => while(true) { 
-          if(is.ready) { 
-            val output = is.readLine 
-            print(output + "\n\n") 
-          } 
-          Thread.sleep(100) 
-        }
-      }
-    })
+		def sendAndReceive(): Unit = {
+			val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+			val ps = new PrintStream(sock.getOutputStream())
 
-    outputer ! true
-    
-    while(flag) {
-      val input = readLine
-      if(input == "quit") flag = false
-      else ps.println(input)
-    }
-    
-    sock.close()
-  }
- 
+			println(sock.getSoTimeout)
+			println(sock.getKeepAlive)
+			println(sock.getSoLinger)
+
+			ps.println("client")
+
+			var flag = true
+
+			val outputer = actor(new Act {
+
+				become {
+					case true => while (true) {
+						if (is.ready) { // Potential point of failure
+							val output = is.readLine
+							print(output + "\n\n")
+						}
+
+						Thread.sleep(100)
+					}
+				}
+
+			})
+
+			outputer ! true
+
+			while (flag) {
+				val input = readLine
+
+				input match {
+					case "quit" => flag = false
+					case _ 		=> ps.println(input)
+				}
+			}
+
+			sock.close()
+		}
+
+	}
+
 }
