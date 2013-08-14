@@ -3,15 +3,16 @@ import akka.actor.ActorDSL._
 
 import collection.mutable
 
-import java.net.{ InetSocketAddress, ServerSocket, Socket }
 import java.io.{ BufferedReader, InputStreamReader, PrintStream	}
+import java.net.{ InetSocketAddress, ServerSocket, Socket }
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.util.hashing.MurmurHash3
 import scala.util.{ Try, Success, Failure }
 
 object server0 extends App {
 
-	implicit val controllerAcceptorSystem = ActorSystem("controlleracceptorsystem")
+	implicit val peerServerAcceptorSystem = ActorSystem("peerserveracceptorsystem")
 	implicit val controllerCommunicatorSystem = ActorSystem("controllercommunicatorsystem")
 	implicit val terminalCommunicatorSystem = ActorSystem("terminalcommunicatorsystem")
 
@@ -22,40 +23,16 @@ object server0 extends App {
 	var connectedFlag = false // Flag that shows whether or not this server has been initially added to the network
 
 	case class Controller(sock: Socket, is: BufferedReader, ps: PrintStream, name: String) // NEED TO MAKE CONTROLLERS UNIQUELY IDENTIFIABLE?
-
+	case class PeerServer(sock: Socket, is: BufferedReader, ps: PrintStream)
+	
 	val controllers = new mutable.ArrayBuffer[Controller] with mutable.SynchronizedBuffer[Controller] {} // Need a place to store the controller connection...?
 
+	val peerServers = new ConcurrentLinkedQueue[PeerServer]()
+	
 	val kvStore = collection.mutable.Map[String, String]()
 
 
 	val ss = new ServerSocket(serverPort)
-
-	// val controllerAcceptor = actor(controllerAcceptorSystem)(new Act {
-
-	// 	become {
-	// 		case true => {
-	// 			println("Server online.") // Technically, this should be after I start accepting connections, not before....
-
-	// 			while (true) {
-	// 				val sock = ss.accept()
-	// 				val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-	// 				val ps = new PrintStream(sock.getOutputStream())
-
-	// 				// This is what happens whenever a new controller connects with the server.
-	// 				val controllerAdder = actor(controllerAcceptorSystem)(new Act {
-
-	// 					become {
-	// 						case true => controllers += Controller(sock, is, ps, (controllers.length + 1).toString) // Should replace this name with something more sensible
-	// 					}
-
-	// 				})
-
-	// 				controllerAdder ! true
-	// 			}
-	// 		}
-	// 	}
-
-	// })
 
 	val controllerInputReader = actor(controllerCommunicatorSystem)(new Act {
 
@@ -74,6 +51,34 @@ object server0 extends App {
 
 	})
 
+	val peerServerAcceptor = actor(peerServerAcceptorSystem)(new Act {
+
+		become {
+			case true => {
+				println("Server accepting TCP connections from peers.")
+
+				while (true) {
+					val sock = ss.accept()
+					val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+					val ps = new PrintStream(sock.getOutputStream())
+
+					// This is what happens whenever a new peer server connects with the server.
+					val peerServerAdder = actor(peerServerAcceptorSystem)(new Act {
+
+						become {
+							case true => peerServers.add(PeerServer(sock, is, ps)) // Should replace this name with something more sensible
+						}
+
+					})
+
+					peerServerAdder ! true
+				}
+			}
+		}
+
+	})
+
+
 	val terminalInputReader = actor(terminalCommunicatorSystem)(new Act{
 		become {
 			case true => while (true) {
@@ -89,7 +94,7 @@ object server0 extends App {
 
 					case "disconnect" => {
 						controllerCommunicatorSystem.shutdown
-						controllerAcceptorSystem.shutdown
+						peerServerAcceptorSystem.shutdown
 						
 						ss.close()
 
@@ -101,8 +106,9 @@ object server0 extends App {
 		}
 	})
 
-	// controllerAcceptor ! true
+
 	controllerInputReader ! true
+	peerServerAcceptor ! true
 	terminalInputReader ! true
 
 	connectToDatabase()
@@ -347,18 +353,3 @@ object server0 extends App {
 	}
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
