@@ -9,7 +9,7 @@ import java.io.{ BufferedReader, InputStreamReader, PrintStream	}
 import scala.util.hashing.MurmurHash3
 import scala.util.{ Try, Success, Failure }
 
-object server0 {
+object server0 extends App {
 
 	implicit val controllerAcceptorSystem = ActorSystem("controlleracceptorsystem")
 	implicit val controllerCommunicatorSystem = ActorSystem("controllercommunicatorsystem")
@@ -21,94 +21,92 @@ object server0 {
 
 	var connectedFlag = false // Flag that shows whether or not this server has been initially added to the network
 
+	case class Controller(sock: Socket, is: BufferedReader, ps: PrintStream, name: String) // NEED TO MAKE CONTROLLERS UNIQUELY IDENTIFIABLE?
+
+	val controllers = new mutable.ArrayBuffer[Controller] with mutable.SynchronizedBuffer[Controller] {} // Need a place to store the controller connection...?
+
 	val kvStore = collection.mutable.Map[String, String]()
 
-	def main(args: Array[String]): Unit = {
 
-		case class Controller(sock: Socket, is: BufferedReader, ps: PrintStream, name: String) // How should I uniquely identify coordinators?
+	val ss = new ServerSocket(serverPort)
 
-		val controllers = new mutable.ArrayBuffer[Controller] with mutable.SynchronizedBuffer[Controller] {}
+	// val controllerAcceptor = actor(controllerAcceptorSystem)(new Act {
 
-		val ss = new ServerSocket(serverPort)
+	// 	become {
+	// 		case true => {
+	// 			println("Server online.") // Technically, this should be after I start accepting connections, not before....
 
-		val controllerAcceptor = actor(controllerAcceptorSystem)(new Act {
+	// 			while (true) {
+	// 				val sock = ss.accept()
+	// 				val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+	// 				val ps = new PrintStream(sock.getOutputStream())
 
-			become {
-				case true => {
-					println("Server online.") // Technically, this should be after I start accepting connections, not before....
+	// 				// This is what happens whenever a new controller connects with the server.
+	// 				val controllerAdder = actor(controllerAcceptorSystem)(new Act {
 
-					while (true) {
-						val sock = ss.accept()
-						val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-						val ps = new PrintStream(sock.getOutputStream())
+	// 					become {
+	// 						case true => controllers += Controller(sock, is, ps, (controllers.length + 1).toString) // Should replace this name with something more sensible
+	// 					}
 
-						// This is what happens whenever a new controller connects with the server.
-						val controllerAdder = actor(controllerAcceptorSystem)(new Act {
+	// 				})
 
-							become {
-								case true => controllers += Controller(sock, is, ps, (controllers.length + 1).toString) // Should replace this name with something more sensible
-							}
+	// 				controllerAdder ! true
+	// 			}
+	// 		}
+	// 	}
 
-						})
+	// })
 
-						controllerAdder ! true
+	val controllerInputReader = actor(controllerCommunicatorSystem)(new Act {
+
+		become {
+			case true => while (true) { // Things to do whenever the controller connects and sends something to the server
+				for (controller <- controllers) {
+					if (controller.is.ready) {
+						val request = controller.is.readLine
+						println("Request: " + request)
+
+						controller.ps.println(controllerSwitchboard(splitRequest(request)))
 					}
 				}
 			}
+		}
 
-		})
+	})
 
-		val controllerInputReader = actor(controllerCommunicatorSystem)(new Act {
+	val terminalInputReader = actor(terminalCommunicatorSystem)(new Act{
+		become {
+			case true => while (true) {
+				val terminalInput = readLine
 
-			become {
-				case true => while (true) { // Things to do whenever the controller connects and sends something to the server
-					for (controller <- controllers) {
-						if (controller.is.ready) {
-							val request = controller.is.readLine
-							println("Request: " + request)
+				terminalInput match {
 
-							controller.ps.println(controllerSwitchboard(splitRequest(request)))
-						}
+					case "connect" => {
+						// controllerAcceptor ! true // IS THIS PROBLEMATIC, BECAUSE THE ACTOR MAY ALREADY BE RUNNING?
+						controllerInputReader ! true // IS THIS PROBLEMATIC, BECAUSE THE ACTOR MAY ALREADY BE RUNNING?
+						connectToDatabase()
 					}
+
+					case "disconnect" => {
+						controllerCommunicatorSystem.shutdown
+						controllerAcceptorSystem.shutdown
+						
+						ss.close()
+
+						println("Server offline.\n")
+					}
+
 				}
 			}
+		}
+	})
 
-		})
+	// controllerAcceptor ! true
+	controllerInputReader ! true
+	terminalInputReader ! true
 
-		val terminalInputReader = actor(terminalCommunicatorSystem)(new Act{
-			become {
-				case true => while (true) {
-					val terminalInput = readLine
+	connectToDatabase()
 
-					terminalInput match {
-
-						case "connect" => {
-							controllerAcceptor ! true // IS THIS PROBLEMATIC, BECAUSE THE ACTOR MAY ALREADY BE RUNNING?
-							controllerInputReader ! true // IS THIS PROBLEMATIC, BECAUSE THE ACTOR MAY ALREADY BE RUNNING?
-							connectToDatabase()
-						}
-
-						case "disconnect" => {
-							controllerCommunicatorSystem.shutdown
-							controllerAcceptorSystem.shutdown
-							
-							ss.close()
-
-							println("Server offline.\n")
-						}
-
-					}
-				}
-			}
-		})
-
-		controllerAcceptor ! true
-		controllerInputReader ! true
-		terminalInputReader ! true
-
-		connectToDatabase()
-
-	}
 
 	def connectToDatabase(): Boolean = {
 
@@ -116,7 +114,7 @@ object server0 {
 
 			case false => {
 				val sock = new Socket() // Potential point of failure
-				sock.setKeepAlive(true)
+				// sock.setKeepAlive(true)
 
 				Try(sock.connect(new InetSocketAddress(host, controllerPort), 5000)) match {
 					case Success(_) => {
@@ -126,6 +124,8 @@ object server0 {
 
 							val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
 							val ps = new PrintStream(sock.getOutputStream())
+
+							controllers += Controller(sock, is, ps, controllers.length.toString)
 
 							ps.println("server " + serverPort) // Potential point of failure
 
