@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.util.hashing.MurmurHash3
 import scala.util.{ Try, Success, Failure }
 
-object server0 extends App {
+object server1 extends App {
 
 	implicit val peerServerAcceptorSystem = ActorSystem("peerserveracceptorsystem")
 	implicit val peerServerCommunicatorSystem = ActorSystem("peerservercommunicatorsystem")
@@ -19,7 +19,7 @@ object server0 extends App {
 
 	val host = "localhost"
 	val controllerPort = 4343 // Port of the head node
-	val serverPort = 4000 // Port of this server
+	val serverPort = 4010 // Port of this server
 
 	var connectedFlag = false // Flag that shows whether or not this server has been initially added to the network
 

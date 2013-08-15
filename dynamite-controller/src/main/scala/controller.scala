@@ -100,7 +100,7 @@ object controller {
 								println("Received request '" + request + "'' from client.")
 
 								val response = clientSwitchboard(splitRequest(request))
-								println("Generated response '" + response + "'' for client.")
+								println("Generated response '" + response + "' for client.")
 
 								client.ps.println(response)
 								println("Sent response '" + response + "' to client.")
@@ -120,7 +120,7 @@ object controller {
 							case Some(server) => {
 								println("Found a server in the queue of unhashed servers.")
 								println("Server at port " + server.port + " polled from queue of unhashed servers.")
-								println("Current queue size: " + unhashedServers.size + ".")
+								println("Current unhashed server queue size: " + unhashedServers.size + ".")
 
 								if (server.is.ready) { // WILL NEED TO WRITE AN APPROPRIATE MANUAL CONNECT METHOD FOR SERVER
 									println("Determined InputStream for server at port " + server.port + " is ready.")
@@ -136,7 +136,7 @@ object controller {
 									println("Current number of servers in network: " + serverContinuum.size + ".")
 
 									server.ps.println(response)
-									println("Sending response '" + response + "' to server at port " + server.port + ".")
+									println("Sent response '" + response + "' to server at port " + server.port + ".")
 								}
 
 							}
@@ -193,7 +193,7 @@ object controller {
 				val nearestServerHashValue = Option(serverContinuum.ceilingKey(kvpHashValue)).getOrElse(serverContinuum.firstKey)
 				println("Found nearest server on hash ring at hash value " + nearestServerHashValue + ".")
 				val server = serverContinuum(nearestServerHashValue)
-				println("Found nearest server at hash value " + nearestServerHashValue + "at port " + server.port + ".")
+				println("Found nearest server at hash value " + nearestServerHashValue + " at port " + server.port + ".")
 
 				server.ps.println("set " + key + " " + value)
 				println("Sent command to server at port " + server.port + " to set key '" + key + "' with value '" + value + "'.")
@@ -220,10 +220,22 @@ object controller {
 		println("Calling migrateKVPs function....")
 		migrateKVPs(server)
 		println("Called migrateKVPs function.")
+		//val migrationConfirmation = server.ps.println("success") /////////////////////////////////////////////////////////////////////
 
-		println("addServer function returning message 'success'.")
+
+
+		// migrationConfirmation match {
+		// 	case "success" => {
+		// 		println("addServer function returning message 'success'.")
+		// 		"success"
+		// 	}
+		// 	case _ => {
+		// 		println("addServer function returning message 'failure'.")
+		// 		"failure"
+		// 	}
+		// }
+
 		"success"
-
 	}
 
 	def clientSwitchboard(tokens: Array[String]): String = {
@@ -358,28 +370,31 @@ object controller {
 
 		if (serverContinuum.size > 1) {
 			println("Determined serverContinuum contains more than one server.")
-			
+
 			// Determine "previous" server on hash ring
-			val previousServer = Option(serverContinuum(serverContinuum.lowerKey(newServerHashValue)))
+			val previousHashValue = Option(serverContinuum.lowerKey(newServerHashValue))
+			// val previousServer = Option(serverContinuum(previousHashValue))
 			println("Found previous server on hash ring.")
 
 			// Determine "next" server on hash ring
-			val nextServer = Option(serverContinuum(serverContinuum.higherKey(newServerHashValue)))
+			val nextServerHashValue = Option(serverContinuum.higherKey(newServerHashValue))
+			// val nextServer = Option(serverContinuum(nextServerHashValue))
 			println("Found next server on hash ring.")
 
 			println("Matching previous server on the hash ring.")
-			previousServer match {
+			previousHashValue match {
 
 				// Case 1: The new server is the "first" server on the hash ring, clockwise from 12:00
 				case None => {
 					println("Found that there is no previous server on the hash ring.")
 					
 					println("Matching next server on the hash ring.")
-					nextServer match {
+					nextServerHashValue match {
 						
 						case None => println("Determined that there exists no next server on the hash ring.") // THIS WILL NEVER HAPPEN, SO I'M NOT SURE WHAT TO DO HERE
 
-						case Some(nextServer) => {
+						case Some(nextServerHashValue) => {
+							val nextServer = serverContinuum(nextServerHashValue)
 							println("Determined that there exists some next server on the hash ring.")
 							// Migrate the keys hashed between the "last" server on the ring and the "end" of the ring from
 							// the next server to the new server
@@ -398,11 +413,12 @@ object controller {
 					}
 				}
 
-				case Some(previousServer) => {
+				case Some(previousServerHashValue) => {
+					val previousServer = serverContinuum(previousServerHashValue)
 					println("Determined that there exists some previous server on the hash ring.")
 					
 					println("Matching next server on the hash ring.")
-					nextServer match {
+					nextServerHashValue match {
 
 						// Case 2: The new server is the "last" server on the hash ring, clockwise from 12:00
 						case None => {
@@ -417,10 +433,13 @@ object controller {
 							println("Sent command to first server on the hash ring at port " + firstServer.port + 
 								" to migrate keys between hash value " + hash(previousServer.port.toString) + " and hash value " + newServerHashValue +
 								" with seed " + seed + " to the new server at port " + newServer.port + ".")
+							val confirmation = firstServer.is.readLine
+							println(confirmation)
 						}
 
 						// Case 3: The new server is neither the "first" nor the "last" server on the hash ring, clockwise from 12:00
-						case Some(nextServer) => {
+						case Some(nextServerHashValue) => {
+							val nextServer = serverContinuum(nextServerHashValue)
 							println("Determined that there exists some next server on the hash ring at port " + nextServer.port + ".")
 
 							// Migrate the keys hashed between the previous server on the ring and the new server on
@@ -429,6 +448,8 @@ object controller {
 							println("Sent command to next server at port " + nextServer.port + " to migrate keys between hash value " + 
 								hash(previousServer.port.toString) + " and hash value " + newServerHashValue + " with seed " + seed + 
 								" to the new server at port " + newServer.port + ".")
+							val confirmation = nextServer.is.readLine
+							println(confirmation)
 						}
 
 					}
