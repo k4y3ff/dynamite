@@ -402,6 +402,9 @@ object controller {
 							println("Sent command to next server at port " + nextServer.port + " to migrate keys between hash values " + 
 								hash(serverContinuum(serverContinuum.lastKey).port.toString) + " and the end of the ring with seed " + seed + 
 								" to new server at port " + newServer.port + ".")
+							val migrationConfirmation1 = nextServer.is.readLine
+							println("Received migration confirmation from server at port " + nextServer.port + ": '" + migrationConfirmation1 + "'.")
+
 							
 							// Migrate the keys hashed between the "beginning" of the ring and the new server's hash value
 							// from the next server to the new server
@@ -409,6 +412,8 @@ object controller {
 							println("Sent command to next server at port " + nextServer.port + 
 								" to migrate keys between the beginning of the hash ring and hash value " + newServerHashValue + " with seed " + seed +
 								" to the new server at port " + newServer.port + ".")
+							val migrationConfirmation2 = newServer.is.readLine
+							println("Received migration confirmation from server at port " + newServer.port + ": '" + migrationConfirmation2 + "'.")
 						} 
 					}
 				}
@@ -433,8 +438,8 @@ object controller {
 							println("Sent command to first server on the hash ring at port " + firstServer.port + 
 								" to migrate keys between hash value " + hash(previousServer.port.toString) + " and hash value " + newServerHashValue +
 								" with seed " + seed + " to the new server at port " + newServer.port + ".")
-							val confirmation = firstServer.is.readLine
-							println(confirmation)
+							val migrationConfirmation = firstServer.is.readLine
+							println("Received migration confirmation from server at port " + firstServer.port + ": '" + migrationConfirmation + "'.")
 						}
 
 						// Case 3: The new server is neither the "first" nor the "last" server on the hash ring, clockwise from 12:00
@@ -444,12 +449,12 @@ object controller {
 
 							// Migrate the keys hashed between the previous server on the ring and the new server on
 							// the ring, from the next server to the new server
-							nextServer.ps.println("migrate " + hash(previousServer.port.toString) + " " + newServerHashValue + " " + newServer.port)
+							nextServer.ps.println("migrate " + hash(previousServer.port.toString) + " " + newServerHashValue + " " + seed + " " + newServer.port)
 							println("Sent command to next server at port " + nextServer.port + " to migrate keys between hash value " + 
 								hash(previousServer.port.toString) + " and hash value " + newServerHashValue + " with seed " + seed + 
 								" to the new server at port " + newServer.port + ".")
-							val confirmation = nextServer.is.readLine
-							println(confirmation)
+							val migrationConfirmation = nextServer.is.readLine
+							println("Received migration confirmation from server at port " + nextServer.port + ": '" + migrationConfirmation + "'.")
 						}
 
 					}

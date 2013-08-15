@@ -256,14 +256,20 @@ object server0 extends App {
 
 	def migrate(tokens: Array[String]): Unit = { // THIS FUNCTION SHOULD RETURN A CONFIRMATION
 
+		println("migrate function received array of length " + tokens.length + ".")
+
 		// Establish low end of hash range
 		val lowHashValueStr = tokens(0)
+		println("Received lowHashValue '" + tokens(0) + "'.")
 		// Establish high end of hash range
 		val highHashValueStr = tokens(1)
+		println("Received highHashValue '" + tokens(1) + "'.")
 		// Establish seed for hash function
 		val seed = tokens(2).toInt
+		println("Received seed value " + seed + ".")
 		// Establish port of new server
 		val newServerPort = tokens(3).toInt
+		println("Received port number " + tokens(3) + ".")
 
 		// Open connection to the new server
 		val sock = new Socket()

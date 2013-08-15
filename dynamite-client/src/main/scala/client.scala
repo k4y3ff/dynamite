@@ -11,7 +11,7 @@ import java.io.InputStreamReader
 
 import scala.util.{ Try, Success, Failure }
 
-object client2 extends App {
+object client extends App {
 
 	val host = "localhost"
 	val controllerPort = 4343
