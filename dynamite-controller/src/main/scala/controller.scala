@@ -110,6 +110,7 @@ object controller {
 			become {
 				case true => {
 					while (true) {
+
 						Option(unhashedServers.poll()) match {
 							case Some(server) => {
 								println("Server at port " + server.port + " polled from queue of unhashed servers.")

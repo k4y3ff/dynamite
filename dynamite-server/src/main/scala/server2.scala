@@ -299,9 +299,7 @@ object server2 extends App {
 
 							confirmation match {
 								case "success" => {
-									val args = new Array[String](1)
-									args(0) = key
-									delete(args)
+									println(delete(Array(key)))
 								}
 
 								case _ => // NEED A PROPER FAILURE CASE HERE
@@ -328,9 +326,7 @@ object server2 extends App {
 									confirmation match {
 										
 										case "success" => {
-											val args = new Array[String](1)
-											args(0) = key
-											delete(args)
+											println(delete(Array(key)))
 										}
 
 										case _ => // NEED A PROPER FAILURE CASE HERE
@@ -361,10 +357,8 @@ object server2 extends App {
 
 										case "success" => {
 											println("Determined confirmation to be 'success'.")
-											val args = new Array[String](1)
-											args(0) = key
 
-											val deleteConfirmation = delete(args)
+											println(delete(Array(key)))
 										}
 
 									}
