@@ -298,80 +298,64 @@ object controller {
 		if (serverContinuum.size > 1) {
 
 			// Determine "previous" server on hash ring
-			val previousHashValue = Option(serverContinuum.lowerKey(newServerHashValue))
+			val previousServerHashValue = Option(serverContinuum.lowerKey(newServerHashValue))
 
 			// Determine "next" server on hash ring
 			val nextServerHashValue = Option(serverContinuum.higherKey(newServerHashValue))
 
-			previousHashValue match {
+			(previousServerHashValue, nextServerHashValue) match {
+				case (None, Some(nextServerHashValue)) => {
+					val nextServer = serverContinuum(nextServerHashValue)
 
-				// Case 1: The new server is the "first" server on the hash ring, clockwise from 12:00
-				case None => {
+					// Migrate the keys hashed between the "last" server on the ring and the "end" of the ring from
+					// the next server to the new server
+					nextServer.ps.println("migrate " + hash(serverContinuum(serverContinuum.lastKey).port.toString) + " " + "end" + " " + seed + " " + newServer.port)
+					println("Sent command to next server at port " + nextServer.port + " to migrate keys between hash values " + 
+						hash(serverContinuum(serverContinuum.lastKey).port.toString) + " and the end of the ring with seed " + seed + 
+						" to new server at port " + newServer.port + ".")
+					val migrationConfirmation1 = nextServer.is.readLine
+					println("Received migration confirmation from server at port " + nextServer.port + ": '" + migrationConfirmation1 + "'.")
+
 					
-					nextServerHashValue match {
-						
-						case None => // This case will never actually occur, since the serverContinuum must have at least one server for this line to run
-
-						case Some(nextServerHashValue) => {
-							val nextServer = serverContinuum(nextServerHashValue)
-							// Migrate the keys hashed between the "last" server on the ring and the "end" of the ring from
-							// the next server to the new server
-							nextServer.ps.println("migrate " + hash(serverContinuum(serverContinuum.lastKey).port.toString) + " " + "end" + " " + seed + " " + newServer.port)
-							println("Sent command to next server at port " + nextServer.port + " to migrate keys between hash values " + 
-								hash(serverContinuum(serverContinuum.lastKey).port.toString) + " and the end of the ring with seed " + seed + 
-								" to new server at port " + newServer.port + ".")
-							val migrationConfirmation1 = nextServer.is.readLine
-							println("Received migration confirmation from server at port " + nextServer.port + ": '" + migrationConfirmation1 + "'.")
-
-							
-							// Migrate the keys hashed between the "beginning" of the ring and the new server's hash value
-							// from the next server to the new server
-							nextServer.ps.println("migrate " + "beginning" + " " + newServerHashValue + " " + seed + " " + newServer.port)
-							println("Sent command to next server at port " + nextServer.port + 
-								" to migrate keys between the beginning of the hash ring and hash value " + newServerHashValue + " with seed " + seed +
-								" to the new server at port " + newServer.port + ".")
-							val migrationConfirmation2 = newServer.is.readLine
-							println("Received migration confirmation from server at port " + newServer.port + ": '" + migrationConfirmation2 + "'.")
-						} 
-					}
+					// Migrate the keys hashed between the "beginning" of the ring and the new server's hash value
+					// from the next server to the new server
+					nextServer.ps.println("migrate " + "beginning" + " " + newServerHashValue + " " + seed + " " + newServer.port)
+					println("Sent command to next server at port " + nextServer.port + 
+						" to migrate keys between the beginning of the hash ring and hash value " + newServerHashValue + " with seed " + seed +
+						" to the new server at port " + newServer.port + ".")
+					val migrationConfirmation2 = newServer.is.readLine
+					println("Received migration confirmation from server at port " + newServer.port + ": '" + migrationConfirmation2 + "'.")
 				}
 
-				case Some(previousServerHashValue) => {
+				case (Some(previousServerHashValue), None) => {
 					val previousServer = serverContinuum(previousServerHashValue)
-					
-					nextServerHashValue match {
+					val firstServer = serverContinuum(serverContinuum.firstKey)
 
-						// Case 2: The new server is the "last" server on the hash ring, clockwise from 12:00
-						case None => {
-
-							val firstServer = serverContinuum(serverContinuum.firstKey)
-
-							// Migrate the keys hashed between the previous server's hash value and the new server's hash value,
-							// from the "first" server on the hash ring to the new server on the hash ring
-							firstServer.ps.println("migrate " + hash(previousServer.port.toString) + " " + newServerHashValue + " " + seed + " " + newServer.port)
-							println("Sent command to first server on the hash ring at port " + firstServer.port + 
-								" to migrate keys between hash value " + hash(previousServer.port.toString) + " and hash value " + newServerHashValue +
-								" with seed " + seed + " to the new server at port " + newServer.port + ".")
-							val migrationConfirmation = firstServer.is.readLine
-							println("Received migration confirmation from server at port " + firstServer.port + ": '" + migrationConfirmation + "'.")
-						}
-
-						// Case 3: The new server is neither the "first" nor the "last" server on the hash ring, clockwise from 12:00
-						case Some(nextServerHashValue) => {
-							val nextServer = serverContinuum(nextServerHashValue)
-
-							// Migrate the keys hashed between the previous server on the ring and the new server on
-							// the ring, from the next server to the new server
-							nextServer.ps.println("migrate " + hash(previousServer.port.toString) + " " + newServerHashValue + " " + seed + " " + newServer.port)
-							println("Sent command to next server at port " + nextServer.port + " to migrate keys between hash value " + 
-								hash(previousServer.port.toString) + " and hash value " + newServerHashValue + " with seed " + seed + 
-								" to the new server at port " + newServer.port + ".")
-							val migrationConfirmation = nextServer.is.readLine
-							println("Received migration confirmation from server at port " + nextServer.port + ": '" + migrationConfirmation + "'.")
-						}
-
-					}
+					// Migrate the keys hashed between the previous server's hash value and the new server's hash value,
+					// from the "first" server on the hash ring to the new server on the hash ring
+					firstServer.ps.println("migrate " + hash(previousServer.port.toString) + " " + newServerHashValue + " " + seed + " " + newServer.port)
+					println("Sent command to first server on the hash ring at port " + firstServer.port + 
+						" to migrate keys between hash value " + hash(previousServer.port.toString) + " and hash value " + newServerHashValue +
+						" with seed " + seed + " to the new server at port " + newServer.port + ".")
+					val migrationConfirmation = firstServer.is.readLine
+					println("Received migration confirmation from server at port " + firstServer.port + ": '" + migrationConfirmation + "'.")
 				}
+
+				case (Some(previousServerHashValue), Some(nextServerHashValue)) => {
+					val previousServer = serverContinuum(previousServerHashValue)
+					val nextServer = serverContinuum(nextServerHashValue)
+
+					// Migrate the keys hashed between the previous server on the ring and the new server on
+					// the ring, from the next server to the new server
+					nextServer.ps.println("migrate " + hash(previousServer.port.toString) + " " + newServerHashValue + " " + seed + " " + newServer.port)
+					println("Sent command to next server at port " + nextServer.port + " to migrate keys between hash value " + 
+						hash(previousServer.port.toString) + " and hash value " + newServerHashValue + " with seed " + seed + 
+						" to the new server at port " + newServer.port + ".")
+					val migrationConfirmation = nextServer.is.readLine
+					println("Received migration confirmation from server at port " + nextServer.port + ": '" + migrationConfirmation + "'.")
+				}
+
+				case (None, None) => // Do nothing, because there is no need to migrate keys
 			}
 
 			
