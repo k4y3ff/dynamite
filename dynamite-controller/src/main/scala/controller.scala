@@ -295,7 +295,7 @@ object controller {
 		val newServerHashValue = hash(newServer.port.toString)
 		println("Generated hash value " + newServerHashValue + " for server at port " + newServer.port + ".")
 
-		if (serverContinuum.size > 1) {
+		if (serverContinuum.size > 1) { // If there are no servers on the hash ring, then there is no need for key migration
 
 			// Determine "previous" server on hash ring
 			val previousServerHashValue = Option(serverContinuum.lowerKey(newServerHashValue))
@@ -354,7 +354,7 @@ object controller {
 					val migrationConfirmation = nextServer.is.readLine
 					println("Received migration confirmation from server at port " + nextServer.port + ": '" + migrationConfirmation + "'.")
 				}
-
+				
 				case (None, None) => // Do nothing, because there is no need to migrate keys
 			}
 
