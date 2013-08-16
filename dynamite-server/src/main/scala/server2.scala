@@ -182,9 +182,7 @@ object server2 extends App {
 
 							ps.println("addServer " + serverPort) // Potential point of failure
 
-							val confirmation = is.readLine // Potential point of failure
-
-							confirmation match {
+							is.readLine match {
 								case "success" => {
 									println("Successfully added server to database.")
 									true
