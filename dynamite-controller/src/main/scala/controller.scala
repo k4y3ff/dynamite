@@ -181,11 +181,11 @@ object controller {
 		if (serverContinuum contains serverHashValue) println("Added server at port " + server.port + " with hash value " + serverHashValue + ".")
 
 		println("Calling migrateKVPs function....")
-		migrateKVPs(server)
+		val migrationConfirmation = migrateKVPs(server)
 		println("Called migrateKVPs function.")
 		//val migrationConfirmation = server.ps.println("success") /////////////////////////////////////////////////////////////////////
 
-		"success"
+		migrationConfirmation
 	}
 
 	def clientSwitchboard(tokens: Array[String]): String = {
@@ -290,7 +290,7 @@ object controller {
 	}
 
 	
-	def migrateKVPs(newServer: Server): Unit = {
+	def migrateKVPs(newServer: Server): String = {
 		
 		val newServerHashValue = hash(newServer.port.toString)
 		println("Generated hash value " + newServerHashValue + " for server at port " + newServer.port + ".")
@@ -304,6 +304,8 @@ object controller {
 			val nextServerHashValue = Option(serverContinuum.higherKey(newServerHashValue))
 
 			(previousServerHashValue, nextServerHashValue) match {
+				
+				// Case 1: The new server is the "first" server on the hash ring, clockwise from 12:00
 				case (None, Some(nextServerHashValue)) => {
 					val nextServer = serverContinuum(nextServerHashValue)
 
@@ -325,8 +327,11 @@ object controller {
 						" to the new server at port " + newServer.port + ".")
 					val migrationConfirmation2 = newServer.is.readLine
 					println("Received migration confirmation from server at port " + newServer.port + ": '" + migrationConfirmation2 + "'.")
+
+					migrationConfirmation2
 				}
 
+				// Case 2: The new server is the "last" server on the hash ring, clockwise from 12:00
 				case (Some(previousServerHashValue), None) => {
 					val previousServer = serverContinuum(previousServerHashValue)
 					val firstServer = serverContinuum(serverContinuum.firstKey)
@@ -339,8 +344,12 @@ object controller {
 						" with seed " + seed + " to the new server at port " + newServer.port + ".")
 					val migrationConfirmation = firstServer.is.readLine
 					println("Received migration confirmation from server at port " + firstServer.port + ": '" + migrationConfirmation + "'.")
+
+					migrationConfirmation
 				}
 
+				
+				// Case 3: The new server is neither the "first" nor "last" server on the hash ring, clockwise from 12:00
 				case (Some(previousServerHashValue), Some(nextServerHashValue)) => {
 					val previousServer = serverContinuum(previousServerHashValue)
 					val nextServer = serverContinuum(nextServerHashValue)
@@ -353,13 +362,18 @@ object controller {
 						" to the new server at port " + newServer.port + ".")
 					val migrationConfirmation = nextServer.is.readLine
 					println("Received migration confirmation from server at port " + nextServer.port + ": '" + migrationConfirmation + "'.")
+
+					migrationConfirmation
 				}
 				
-				case (None, None) => // Do nothing, because there is no need to migrate keys
+				// Case 4: The new server is the only server on the hash ring
+				case (None, None) => "success" // Do nothing, because there is no need to migrate keys
 			}
 
 			
 		}
+
+		"success"
 
 	}
 
