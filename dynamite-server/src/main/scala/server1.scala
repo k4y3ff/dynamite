@@ -12,8 +12,7 @@ import scala.util.{ Try, Success, Failure }
 
 object server1 extends App {
 
-	implicit val peerServerAcceptorSystem = ActorSystem("peerserveracceptorsystem")
-	implicit val peerServerCommunicatorSystem = ActorSystem("peerservercommunicatorsystem")
+	implicit val peerServerSystem = ActorSystem("peerserversystem")
 	implicit val controllerCommunicatorSystem = ActorSystem("controllercommunicatorsystem")
 	implicit val terminalCommunicatorSystem = ActorSystem("terminalcommunicatorsystem")
 
@@ -52,7 +51,7 @@ object server1 extends App {
 
 	})
 
-	val peerServerInputReader = actor(peerServerCommunicatorSystem)(new Act {
+	val peerServerInputReader = actor(peerServerSystem)(new Act {
 
 		become {
 			case true => while (true) {
@@ -96,7 +95,7 @@ object server1 extends App {
 
 	})
 
-	val peerServerAcceptor = actor(peerServerAcceptorSystem)(new Act {
+	val peerServerAcceptor = actor(peerServerSystem)(new Act {
 
 		become {
 			case true => {
@@ -108,7 +107,7 @@ object server1 extends App {
 					val ps = new PrintStream(sock.getOutputStream())
 
 					// This is what happens whenever a new peer server connects with the server.
-					val peerServerAdder = actor(peerServerAcceptorSystem)(new Act {
+					val peerServerAdder = actor(peerServerSystem)(new Act {
 
 						become {
 							case true => peerServers.add(PeerServer(sock, is, ps)) // Should replace this name with something more sensible
@@ -139,7 +138,7 @@ object server1 extends App {
 
 					case "disconnect" => {
 						controllerCommunicatorSystem.shutdown
-						peerServerAcceptorSystem.shutdown
+						peerServerSystem.shutdown
 						
 						ss.close()
 
