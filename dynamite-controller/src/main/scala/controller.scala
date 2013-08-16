@@ -50,19 +50,15 @@ object controller {
 						println("Accepted socket connection.")
 
 						val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
-						println("Establishing InputStream.")
 
 						val ps = new PrintStream(sock.getOutputStream(), true)
-						println("Establishing PrintStream.")
 
 						val adder = actor(acceptorSystem)(new Act {
 							become {
 								case true => {
 									val greeting = is.readLine
-									println("Received greeting '" + greeting + "'.")
 
 									val tokens = greeting.split(" ")
-									println("Split greeting to '" + tokens.toString + "'")
 
 									tokens(0) match {
 
@@ -94,13 +90,11 @@ object controller {
 					while (true) {
 						for (client <- clients) {
 							if (client.is.ready) {
-								println("Found client InputStream ready.")
 
 								val request = client.is.readLine
 								println("Received request '" + request + "'' from client.")
 
 								val response = clientSwitchboard(splitRequest(request))
-								println("Generated response '" + response + "' for client.")
 
 								client.ps.println(response)
 								println("Sent response '" + response + "' to client.")
@@ -118,22 +112,17 @@ object controller {
 					while (true) {
 						Option(unhashedServers.poll()) match {
 							case Some(server) => {
-								println("Found a server in the queue of unhashed servers.")
 								println("Server at port " + server.port + " polled from queue of unhashed servers.")
-								println("Current unhashed server queue size: " + unhashedServers.size + ".")
 
 								if (server.is.ready) { // WILL NEED TO WRITE AN APPROPRIATE MANUAL CONNECT METHOD FOR SERVER
-									println("Determined InputStream for server at port " + server.port + " is ready.")
 
 									val request = server.is.readLine
 									println("Received request '" + request + "'from server at port " + server.port + ".")
 
 									val response = serverSwitchboard(server, splitRequest(request))
-									println("Generated response '" + response + "' for server at port " + server.port + ".")
 
 									servers += server
 									println("Added server at port " + server.port + " to map of hashed servers.")
-									println("Current number of servers in network: " + serverContinuum.size + ".")
 
 									server.ps.println(response)
 									println("Sent response '" + response + "' to server at port " + server.port + ".")
@@ -148,35 +137,14 @@ object controller {
 				}
 			}
 		})
-		
-		// val serverCommunicator = actor(serverCommunicatorSystem)(new Act {
-		// 	become {
-		// 		case true => {
-		// 			while (true) {
-		// 				for (server <- servers) {
-		// 					if (server.is.ready) { // THIS IS THE POINT OF FAILURE IF A SERVER IS OFFLINE
-		// 						val request = server.is.readLine
-		// 						val response = serverSwitchboard(server, splitRequest(request))
-		// 						server.ps.println(response)
-		// 					}
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// })
 
 		acceptor ! true
-		println("Activated akka actor to accept socket connections.")
-		// serverCommunicator ! true
 		serverAdder ! true
-		println("Activated akka actor to add new servers to the network.")
 		clientCommunicator ! true
-		println("Activated akka actor to communicate with clients.")
-
+		println("Controller online.")
 	}
 
 	def addPair(key: String, value: String): String = {
-		println("addPair function received key '" + key + "' and value '" + value + "'.")
 
 		val kvpHashValue = hash(key)
 		println("Generated hash value " + kvpHashValue + " for key '" + key + "'.")
@@ -189,9 +157,7 @@ object controller {
 			}
 
 			case _ => {
-				println("Found at least one server on the network.")
 				val nearestServerHashValue = Option(serverContinuum.ceilingKey(kvpHashValue)).getOrElse(serverContinuum.firstKey)
-				println("Found nearest server on hash ring at hash value " + nearestServerHashValue + ".")
 				val server = serverContinuum(nearestServerHashValue)
 				println("Found nearest server at hash value " + nearestServerHashValue + " at port " + server.port + ".")
 
@@ -201,17 +167,14 @@ object controller {
 				val confirmation = server.is.readLine
 				println("Received confirmation from server at port " + server.port + ": '" + confirmation + "'.")
 
-				println("addPair function returning confirmation '" + confirmation + "' from addPair function.")
 				confirmation
 			}
 		}
 	}
 
 	def addServer(server: Server): String = {
-		println("addServer function received server at port " + server.port + ".")
 		
 		val serverHashValue = hash(server.port.toString)
-		println("Generated hash value " + serverHashValue + " for server at port " + server.port + ".")
 
 		serverContinuum(serverHashValue) = server
 
@@ -222,34 +185,17 @@ object controller {
 		println("Called migrateKVPs function.")
 		//val migrationConfirmation = server.ps.println("success") /////////////////////////////////////////////////////////////////////
 
-
-
-		// migrationConfirmation match {
-		// 	case "success" => {
-		// 		println("addServer function returning message 'success'.")
-		// 		"success"
-		// 	}
-		// 	case _ => {
-		// 		println("addServer function returning message 'failure'.")
-		// 		"failure"
-		// 	}
-		// }
-
 		"success"
 	}
 
 	def clientSwitchboard(tokens: Array[String]): String = {
-		println("clientSwitchboard function received tokens '" + tokens.toString + "'.")
 		
-		println("Matching command token(0).")
 		tokens(0) match {
 		
 			case "delete" => {
-				println("Determined command token(0) to be 'delete'.")
 				tokens.length match {
 					case 1 => "Must enter a key."
 					case 2 => {
-						println("Calling deletePair function with token '" + tokens(1).toString + "'.")
 						deletePair(tokens(1))
 					}
 					case _ => "Too many arguments."
@@ -257,7 +203,6 @@ object controller {
 			}
 
 			case "get" => {
-				println("Determined command token(0) to be 'get'.")
 				tokens.length match {
 					case 1 => "Must enter a key."
 					case 2 => {
@@ -269,7 +214,6 @@ object controller {
 			}
 
 			case "listServers" => {
-				println("Determined command token(0) to be 'listServers'.")
 				tokens.length match {
 					case 1 => {
 						println("Calling listServers function.")
@@ -280,7 +224,6 @@ object controller {
 			}
 
 			case "set" => {
-				println("Determined command token(0) to be 'set'.")
 				tokens.length match {
 					case 1 => "Must enter a key and value."
 					case 2 => "Must enter a value."
@@ -293,7 +236,6 @@ object controller {
 			}
 
 			case "status" => {
-				println("Determined command token(0) to be 'status'.")
 				tokens.length match {
 					case 1 => {
 						println("Calling status function.")
@@ -309,12 +251,10 @@ object controller {
 
 
 	def deletePair(key: String): String = {
-		println("deletePair function received key '" + key + "'.")
 		
 		val kvpHashValue = hash(key)
 		println("Generated hash value " + kvpHashValue + " for key '" + key + "'.")
 		val nearestServerHashValue = Option(serverContinuum.higherKey(kvpHashValue)).getOrElse(serverContinuum.firstKey)
-		println("Found nearest server on hash ring at hash value " + nearestServerHashValue + ".")
 		val server = serverContinuum(nearestServerHashValue)
 		println("Found nearest server at hash value " + nearestServerHashValue + " at port " + server.port + ".")
 
@@ -323,17 +263,14 @@ object controller {
 		val confirmation = server.is.readLine
 		println("Received confirmation '" + confirmation + "' from server at port " + server.port + ".")
 
-		println("deletePair function returning message '" + confirmation + "'.")
 		confirmation
 	}
 
 	def getValue(key: String): String = {
-		println("getValue function received key '" + key + "'.")
 
 		val kvpHashValue = hash(key)
 		println("Generated hash value " + kvpHashValue + " for key '" + key + "'.")
 		val serverHashValue = Option(serverContinuum.higherKey(kvpHashValue)).getOrElse(serverContinuum.firstKey)
-		println("Found nearest server on hash ring at hash value " + serverHashValue + ".")
 		val server = serverContinuum(serverHashValue)
 		println("Found nearest server at hash value " + serverHashValue + " at port " + server.port + ".")
 
@@ -342,60 +279,41 @@ object controller {
 		val value = server.is.readLine
 		println("Received value '" + value + "' from server at port " + server.port + ".")
 
-		println("getValue function returning value '" + value + "'.")
 		value
 	}
 
-	def hash(str: String): Int = {
-		println("hash function received string '" + str + "'.")
-
-		val hashValue = MurmurHash3.stringHash(str, seed)
-		
-		println("hash function returning hash value " + hashValue + ".")
-		hashValue
-	}
+	def hash(str: String): Int = MurmurHash3.stringHash(str, seed)
 
 	def listServers(): String = {
-		println("listServers function called.")
-		println("listServers function returning serverContinuum converted to string.")
+		println("Generating string of servers on the serverContinuum.")
 		serverContinuum.toString
 	}
 
 	
 	def migrateKVPs(newServer: Server): Unit = {
-		println("migrateKVPs function received server at port " + newServer.port + ".")
 		
 		val newServerHashValue = hash(newServer.port.toString)
 		println("Generated hash value " + newServerHashValue + " for server at port " + newServer.port + ".")
 
 		if (serverContinuum.size > 1) {
-			println("Determined serverContinuum contains more than one server.")
 
 			// Determine "previous" server on hash ring
 			val previousHashValue = Option(serverContinuum.lowerKey(newServerHashValue))
-			// val previousServer = Option(serverContinuum(previousHashValue))
-			println("Found previous server on hash ring.")
 
 			// Determine "next" server on hash ring
 			val nextServerHashValue = Option(serverContinuum.higherKey(newServerHashValue))
-			// val nextServer = Option(serverContinuum(nextServerHashValue))
-			println("Found next server on hash ring.")
 
-			println("Matching previous server on the hash ring.")
 			previousHashValue match {
 
 				// Case 1: The new server is the "first" server on the hash ring, clockwise from 12:00
 				case None => {
-					println("Found that there is no previous server on the hash ring.")
 					
-					println("Matching next server on the hash ring.")
 					nextServerHashValue match {
 						
-						case None => println("Determined that there exists no next server on the hash ring.") // THIS WILL NEVER HAPPEN, SO I'M NOT SURE WHAT TO DO HERE
+						case None => // This case will never actually occur, since the serverContinuum must have at least one server for this line to run
 
 						case Some(nextServerHashValue) => {
 							val nextServer = serverContinuum(nextServerHashValue)
-							println("Determined that there exists some next server on the hash ring.")
 							// Migrate the keys hashed between the "last" server on the ring and the "end" of the ring from
 							// the next server to the new server
 							nextServer.ps.println("migrate " + hash(serverContinuum(serverContinuum.lastKey).port.toString) + " " + "end" + " " + seed + " " + newServer.port)
@@ -420,17 +338,13 @@ object controller {
 
 				case Some(previousServerHashValue) => {
 					val previousServer = serverContinuum(previousServerHashValue)
-					println("Determined that there exists some previous server on the hash ring.")
 					
-					println("Matching next server on the hash ring.")
 					nextServerHashValue match {
 
 						// Case 2: The new server is the "last" server on the hash ring, clockwise from 12:00
 						case None => {
-							println("Determined that there exists no next server on the hash ring.")
 
 							val firstServer = serverContinuum(serverContinuum.firstKey)
-							println("Found first server on the hash ring at port " + firstServer.port + ".")
 
 							// Migrate the keys hashed between the previous server's hash value and the new server's hash value,
 							// from the "first" server on the hash ring to the new server on the hash ring
@@ -445,7 +359,6 @@ object controller {
 						// Case 3: The new server is neither the "first" nor the "last" server on the hash ring, clockwise from 12:00
 						case Some(nextServerHashValue) => {
 							val nextServer = serverContinuum(nextServerHashValue)
-							println("Determined that there exists some next server on the hash ring at port " + nextServer.port + ".")
 
 							// Migrate the keys hashed between the previous server on the ring and the new server on
 							// the ring, from the next server to the new server
@@ -468,19 +381,14 @@ object controller {
 
 
 	def serverSwitchboard(server: Server, tokens: Array[String]): String = {
-		println("serverSwitchboard function received server at port " + server.port + " and tokens '" + tokens.toString + "'.")
 
 		tokens(0) match {
 		
 			case "addServer" => {
-				println("Determined command token(0) to be 'addServer'.")
-				println("Calling addServer function to server at port " + server.port + ".")
 				addServer(server)
 			}
 
 			case _ => {
-				println("Determined command token(0) to be unrecognizable.")
-				println("Returning message 'failure'.")
 				"failure"
 			}
 		}
@@ -488,34 +396,27 @@ object controller {
 
 
 	def splitRequest(request: String): Array[String] = {
-		println("splitRequest function received request '" + request + "'.")
 
 		val splitRequest = request.split(" ")
 
-		println("splitRequest function returning '" + splitRequest.toString + ".")
 		splitRequest
 	}
 
 	def status(): String = {
-		println("status function called.")
 
+		println("status function generating status message.")
 		var statusMessage = "\nStatus\n====================\n"
 
-		println("Matching serverContinuum size.")
 		serverContinuum.size match {
 
 			case 0 => {
-				println("Determined that there are no servers in the serverContinuum.")
 
 				statusMessage += "No servers connected.\n\n"
 				
-				println("status function returning status message.")
 				statusMessage
 			}
 
 			case _ => {
-				println("Determined that there is at least one server in the serverContinuum.")
-				println("Iterating over the servers in the serverContinuum.")
 				for ((hashValue, server) <- serverContinuum) {
 					statusMessage += "--------------------\nPort: " + server.port + "\nHash Value: " + hashValue + "\n"
 
