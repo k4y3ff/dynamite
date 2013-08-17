@@ -19,6 +19,7 @@ object server0 extends App {
 	val host = "localhost"
 	val controllerPort = 4343 // Port of the head node
 	val serverPort = 4000 // Port of this server
+	//var serverPort = None
 
 	var connectedFlag = false // Flag that shows whether or not this server has been initially added to the network
 
@@ -149,7 +150,8 @@ object server0 extends App {
 			}
 		}
 	})
-
+	
+	val configuration = configure(args)
 
 	controllerInputReader ! true
 	peerServerAcceptor ! true
@@ -159,13 +161,18 @@ object server0 extends App {
 	connectToDatabase()
 
 
+	def configure(args: Array[String]) = {
+		println("Configuring....")
+		if (args.length > 0) println(args(0)) else None
+	}
+
+
 	def connectToDatabase(): Boolean = {
 
 		connectedFlag match {
 
 			case false => {
 				val sock = new Socket() // Potential point of failure
-				// sock.setKeepAlive(true)
 
 				Try(sock.connect(new InetSocketAddress(host, controllerPort), 5000)) match {
 					case Success(_) => {
@@ -245,7 +252,7 @@ object server0 extends App {
 	def get(tokens: Array[String]): String = {
 
 		val value = kvStore getOrElse(tokens(0), "failure") // This is problematic, because someone might want to store the string "failure"
-		println("Value associated with key '" + tokens(0) + "' retrieved from server.")
+		println("Value '" + value + "'' with key '" + tokens(0) + "' retrieved from server.")
 
 		value
 
@@ -396,19 +403,25 @@ object server0 extends App {
 		(kvStore(tokens(0)) == tokens(1)) match {
 			
 			case true => {
-				println("Successfully updated key '" + tokens(0) + "'.")
+				println("Successfully updated key '" + tokens(0) + "' with value '" + tokens(1) + "'.")
 				"success"
 			}
 
 			case _ => {
-				println("Failed to update key '" + tokens(0) + "'.")
+				println("Failed to update key '" + tokens(0) + "' with value '" + tokens(1) + "'.")
 				"failure"
 			}
 		}
 	}
 
 	def splitRequest(request: String): Array[String] = {
-		request.split(" ")
+		
+		request.indexOf("\'") match {
+			
+			case -1 => request.split(" ")
+			
+			case index: Int => request.slice(0, index).split(" ") :+ request.slice(index + 1, request.length - 1)
+		}
 	}
 
 }

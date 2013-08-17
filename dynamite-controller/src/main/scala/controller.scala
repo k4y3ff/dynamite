@@ -145,6 +145,7 @@ object controller {
 		println("Controller online.")
 	}
 
+
 	def addPair(key: String, value: String): String = {
 
 		val kvpHashValue = hash(key)
@@ -285,6 +286,12 @@ object controller {
 
 	def hash(str: String): Int = MurmurHash3.stringHash(str, seed)
 
+	// def importFile(filename: String): String = {
+	// 	for (line <- Source.fromPath("\"" + filename + "\"").getLines()) {
+
+	// 	}
+	// }
+
 	def listServers(): String = {
 		println("Generating string of servers on the serverContinuum.")
 		serverContinuum.toString
@@ -395,10 +402,13 @@ object controller {
 
 
 	def splitRequest(request: String): Array[String] = {
-
-		val splitRequest = request.split(" ")
-
-		splitRequest
+		
+		request.indexOf("\'") match {
+			
+			case -1 => request.split(" ")
+			
+			case index: Int => request.slice(0, index).split(" ") :+ request.slice(index, request.length)
+		}
 	}
 
 	def status(): String = {
