@@ -296,7 +296,7 @@ object server0 extends App {
 						val keyHashValue = hash(key)
 
 						if (keyHashValue > lowHashValue) {
-							ps.println("set " + key + " " + value)
+							ps.println("set " + key + " '" + value + "'")
 
 							val confirmation = is.readLine
 
@@ -322,7 +322,7 @@ object server0 extends App {
 								val keyHashValue = hash(key)
 
 								if (keyHashValue <= highHashValue) {
-									ps.println("set " + key + " " + value)
+									ps.println("set " + key + " '" + value + "'")
 
 									val confirmation = is.readLine
 
@@ -350,7 +350,7 @@ object server0 extends App {
 
 								if (keyHashValue <= highHashValue && keyHashValue > lowHashValue) {
 									println("Determined that '" + key + "' is within the given hash range.")
-									ps.println("set " + key + " " + value)
+									ps.println("set " + key + " '" + value + "'")
 									println("Sent command to server at port " + newServerPort + " to set key '" + key + "' with value '" + value + "'.")
 									val confirmation = is.readLine
 									println("Received confirmation '" + confirmation + "' from server at port " + newServerPort + ".")
