@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.TreeMap
 import scala.collection.JavaConversions._
 import scala.concurrent._
+import scala.io
 import scala.util.hashing.MurmurHash3
 import scala.util.{ Try, Success, Failure }
 
@@ -92,7 +93,9 @@ object controller {
 							if (client.is.ready) {
 
 								val request = client.is.readLine
-								println("Received request '" + request + "'' from client.")
+								println("Received request '" + request + "' from client.")
+
+								// if (request.slice(0, request.indexOf(" ")) == "batchSet") batchAddPair(splitRequest(request)(1), splitRequest(request)(2))
 
 								val response = clientSwitchboard(splitRequest(request))
 
@@ -155,7 +158,7 @@ object controller {
 			
 			case 0 => {
 				println("No server available; cannot save KVP '" + key + "'.")
-				"false"
+				"failure"
 			}
 
 			case _ => {
@@ -190,10 +193,38 @@ object controller {
 		migrationConfirmation
 	}
 
+	// def batchAddPair(key: String, value: String): String = {
+	// 	val kvpHashValue = hash(key)
+	// 	println("Generated hash value " + kvpHashValue + " for key '" + key + "'.")
+		
+	// 	serverContinuum.size match {
+			
+	// 		case 0 => {
+	// 			println("No server available; cannot save KVP '" + key + "'.")
+				
+	// 			"failure"
+	// 		}
+
+	// 		case _ => {
+	// 			val nearestServerHashValue = Option(serverContinuum.ceilingKey(kvpHashValue)).getOrElse(serverContinuum.firstKey)
+	// 			val server = serverContinuum(nearestServerHashValue)
+	// 			println("Found nearest server at hash value " + nearestServerHashValue + " at port " + server.port + ".")
+
+	// 			server.ps.println("set " + key + " " + value)
+	// 			println("Sent command to server at port " + server.port + " to set key '" + key + "' with value '" + value + "'.")
+				
+	// 			val confirmation = server.is.readLine
+	// 			println("Received confirmation from server at port " + server.port + ": '" + confirmation + "'.")
+
+	// 			"success"
+	// 		}
+	// 	}
+	// }
+
 	def clientSwitchboard(tokens: Array[String]): String = {
 		
 		tokens(0) match {
-		
+
 			case "delete" => {
 				tokens.length match {
 					case 1 => "Must enter a key."
@@ -285,12 +316,6 @@ object controller {
 	}
 
 	def hash(str: String): Int = MurmurHash3.stringHash(str, seed)
-
-	// def importFile(filename: String): String = {
-	// 	for (line <- Source.fromPath("\"" + filename + "\"").getLines()) {
-
-	// 	}
-	// }
 
 	def listServers(): String = {
 		println("Generating string of servers on the serverContinuum.")

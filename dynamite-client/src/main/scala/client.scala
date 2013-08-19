@@ -9,6 +9,7 @@ import java.io.BufferedReader
 import java.io.PrintStream
 import java.io.InputStreamReader
 
+import scala.util.control._
 import scala.util.{ Try, Success, Failure }
 
 object client extends App {
@@ -24,6 +25,31 @@ object client extends App {
 	implicit val terminalSystem = ActorSystem("terminalsystem")
 
 	connectToDatabase()
+
+	def batchSet(is: BufferedReader, ps: PrintStream, terminalInput: String): String = { // This doesn't print "success" at the end
+		var overallSuccess = "success"
+
+		val filename = terminalInput.split(" ")(1)
+
+		val currentDirectory = new java.io.File(".").getCanonicalPath
+		val filepath = currentDirectory + "/data/" + filename
+
+		val loop = new Breaks
+
+		loop.breakable {
+			for (line <- scala.io.Source.fromFile(filepath).getLines) {
+				ps.println("set " + line)
+				val confirmation = is.readLine()
+
+				if (confirmation != "success") {
+					overallSuccess = confirmation
+					loop.break
+				}
+			}
+		}
+
+		"success"
+	}
 
 	def connectToDatabase(): Boolean = {
 
@@ -45,6 +71,10 @@ object client extends App {
 			case true => false // If the client is already connected to the database, do nothing
 		}
 	}
+
+	def firstToken(input: String): String = {
+		input.slice(0, input.indexOf(" "))
+	}	
 
 	def sendAndReceive(): Boolean = {
 		val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
@@ -73,9 +103,12 @@ object client extends App {
 					while (flag) {
 						val input = readLine
 
-						input match {
-							case "quit" => flag = false
-							case _ 		=> ps.println(input)
+						firstToken(input) match {
+							case "import"	=> {
+								println(batchSet(is, ps, input) + "\n\n")
+							}
+							case "quit" 	=> flag = false
+							case _ 			=> ps.println(input)
 						}
 					}
 
