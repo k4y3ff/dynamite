@@ -18,8 +18,7 @@ object server0 extends App {
 
 	val host = "localhost"
 	val controllerPort = 4343 // Port of the head node
-	val serverPort = 4000 // Port of this server
-	//var serverPort = None
+	val serverPort = args(0).toInt // Port of this server
 
 	var connectedFlag = false // Flag that shows whether or not this server has been initially added to the network
 
