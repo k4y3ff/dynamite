@@ -7,7 +7,6 @@ import java.net.{ ServerSocket, Socket }
 import java.io.{ BufferedReader, InputStreamReader, PrintStream }
 import java.util.concurrent.ConcurrentLinkedQueue
 
-// import ExecutionContext.Implicits.global
 import java.util.TreeMap
 import scala.collection.JavaConversions._
 import scala.concurrent._
@@ -192,34 +191,6 @@ object controller {
 
 		migrationConfirmation
 	}
-
-	// def batchAddPair(key: String, value: String): String = {
-	// 	val kvpHashValue = hash(key)
-	// 	println("Generated hash value " + kvpHashValue + " for key '" + key + "'.")
-		
-	// 	serverContinuum.size match {
-			
-	// 		case 0 => {
-	// 			println("No server available; cannot save KVP '" + key + "'.")
-				
-	// 			"failure"
-	// 		}
-
-	// 		case _ => {
-	// 			val nearestServerHashValue = Option(serverContinuum.ceilingKey(kvpHashValue)).getOrElse(serverContinuum.firstKey)
-	// 			val server = serverContinuum(nearestServerHashValue)
-	// 			println("Found nearest server at hash value " + nearestServerHashValue + " at port " + server.port + ".")
-
-	// 			server.ps.println("set " + key + " " + value)
-	// 			println("Sent command to server at port " + server.port + " to set key '" + key + "' with value '" + value + "'.")
-				
-	// 			val confirmation = server.is.readLine
-	// 			println("Received confirmation from server at port " + server.port + ": '" + confirmation + "'.")
-
-	// 			"success"
-	// 		}
-	// 	}
-	// }
 
 	def clientSwitchboard(tokens: Array[String]): String = {
 		
