@@ -37,16 +37,13 @@ object controller {
 
 		val unhashedServers = new ConcurrentLinkedQueue[Server]()
 
-		// For once I start dealing with fault tolerance
-		val disconnectedServers = new mutable.ArrayBuffer[Server] with mutable.SynchronizedBuffer[Server] {}
-
 		val ss = new ServerSocket(controllerPort)
 
 		val acceptor = actor(acceptorSystem)(new Act {
 			become {
 				case true => {
 					while(true) {
-						val sock = ss.accept() // IS THIS A POTENTIAL POINT OF FAILURE? SHOULD I BE USING A TRY?
+						val sock = ss.accept()
 						println("Accepted socket connection.")
 
 						val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
@@ -69,7 +66,7 @@ object controller {
 										}
 
 										case _ => {
-											clients += Client(sock, is, ps, (clients.length).toString) // NEED TO MAKE CLIENTS UNIQUELY IDENTIFIABLE
+											clients += Client(sock, is, ps, (clients.length).toString) 
 											println("Added client to list of clients.")
 										}
 
@@ -94,8 +91,6 @@ object controller {
 								val request = client.is.readLine
 								println("Received request '" + request + "' from client.")
 
-								// if (request.slice(0, request.indexOf(" ")) == "batchSet") batchAddPair(splitRequest(request)(1), splitRequest(request)(2))
-
 								val response = clientSwitchboard(splitRequest(request))
 
 								client.ps.println(response)
@@ -117,7 +112,7 @@ object controller {
 							case Some(server) => {
 								println("Server at port " + server.port + " polled from queue of unhashed servers.")
 
-								if (server.is.ready) { // WILL NEED TO WRITE AN APPROPRIATE MANUAL CONNECT METHOD FOR SERVER
+								if (server.is.ready) { 
 
 									val request = server.is.readLine
 									println("Received request '" + request + "'from server at port " + server.port + ".")
@@ -187,7 +182,6 @@ object controller {
 		println("Calling migrateKVPs function....")
 		val migrationConfirmation = migrateKVPs(server)
 		println("Called migrateKVPs function.")
-		//val migrationConfirmation = server.ps.println("success") /////////////////////////////////////////////////////////////////////
 
 		migrationConfirmation
 	}

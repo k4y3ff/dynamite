@@ -26,7 +26,7 @@ object client extends App {
 
 	connectToDatabase()
 
-	def batchSet(is: BufferedReader, ps: PrintStream, terminalInput: String): String = { // This doesn't print "success" at the end
+	def batchSet(is: BufferedReader, ps: PrintStream, terminalInput: String): String = {
 		var overallSuccess = "success"
 
 		val filename = terminalInput.split(" ")(1)
