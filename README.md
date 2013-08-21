@@ -2,7 +2,7 @@ dynamite
 =========
 
 ## Overview
-dynamite is an in-memory, distributed NoSQL database engine, written in Scala.
+Dynamite is an in-memory, distributed NoSQL database engine, written in Scala.
 
 ## Network Protocol
 Data is transmitted between clients and the main controller node--then, between the controller node and storage servers--using TCP/IP sockets.
