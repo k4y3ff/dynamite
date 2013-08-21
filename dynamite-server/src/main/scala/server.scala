@@ -22,10 +22,10 @@ object server extends App {
 
 	var connectedFlag = false // Flag that shows whether or not this server has been initially added to the network
 
-	case class Controller(sock: Socket, is: BufferedReader, ps: PrintStream, name: String)
+	case class Controller(sock: Socket, is: BufferedReader, ps: PrintStream, name: String) // NEED TO MAKE CONTROLLERS UNIQUELY IDENTIFIABLE?
 	case class PeerServer(sock: Socket, is: BufferedReader, ps: PrintStream)
 	
-	val controllers = new mutable.ArrayBuffer[Controller] with mutable.SynchronizedBuffer[Controller] {} // Place to store the controller connection
+	val controllers = new mutable.ArrayBuffer[Controller] with mutable.SynchronizedBuffer[Controller] {} // Need a place to store the controller connection...?
 
 	val peerServers = new ConcurrentLinkedQueue[PeerServer]()
 	
@@ -110,7 +110,7 @@ object server extends App {
 					val peerServerAdder = actor(peerServerSystem)(new Act {
 
 						become {
-							case true => peerServers.add(PeerServer(sock, is, ps))
+							case true => peerServers.add(PeerServer(sock, is, ps)) // Should replace this name with something more sensible
 						}
 
 					})
@@ -130,8 +130,9 @@ object server extends App {
 
 				terminalInput match {
 
-					case "connect" => {						
-						controllerInputReader ! true
+					case "connect" => {
+						// controllerAcceptor ! true // IS THIS PROBLEMATIC, BECAUSE THE ACTOR MAY ALREADY BE RUNNING?
+						controllerInputReader ! true // IS THIS PROBLEMATIC, BECAUSE THE ACTOR MAY ALREADY BE RUNNING?
 						connectToDatabase()
 					}
 
@@ -183,9 +184,9 @@ object server extends App {
 
 							controllers += Controller(sock, is, ps, controllers.length.toString)
 
-							ps.println("server " + serverPort)
+							ps.println("server " + serverPort) // Potential point of failure
 
-							ps.println("addServer " + serverPort)
+							ps.println("addServer " + serverPort) // Potential point of failure
 
 							is.readLine match {
 								case "success" => {
@@ -249,14 +250,14 @@ object server extends App {
 	// Returns a value, given a key
 	def get(tokens: Array[String]): String = {
 
-		val value = kvStore getOrElse(tokens(0), "failure")
+		val value = kvStore getOrElse(tokens(0), "failure") // This is problematic, because someone might want to store the string "failure"
 		println("Value '" + value + "'' with key '" + tokens(0) + "' retrieved from server.")
 
 		value
 
 	}
 
-	def migrate(tokens: Array[String]): Unit = {
+	def migrate(tokens: Array[String]): Unit = { // THIS FUNCTION SHOULD RETURN A CONFIRMATION
 
 		println("migrate function received array of length " + tokens.length + ".")
 
@@ -275,20 +276,29 @@ object server extends App {
 
 		// Open connection to the new server
 		val sock = new Socket()
+		println("Opened socket.")
 
 		Try(sock.connect(new InetSocketAddress(host, newServerPort), 5000)) match {
-			case Success(_) => migrateKVPs()
+			case Success(_) => {
+				println("Connected to peer server at port " + newServerPort + ".")
+				migrateKVPs()
+			}
+
 			case Failure(_) => println("Failed to migrate KVPs hashed between " + lowHashValueStr + " and " + highHashValueStr + " to server at port " + newServerPort + ".")
 		}
 
 		def migrateKVPs() {
 
 			val is = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+			println("Established InputStream for peer server at port " + newServerPort + ".")
+
 			val ps = new PrintStream(sock.getOutputStream())
+			println("Established PrintStream for peer server at port " + newServerPort + ".")
 
 			highHashValueStr match {
 
 				case "end" => {
+					println("Matched highHashValueStr to 'end'.")
 					val lowHashValue = lowHashValueStr.toInt
 
 					for ((key, value) <- kvStore) {
@@ -311,10 +321,13 @@ object server extends App {
 				}
 
 				case _ => {
+					println("Matched highHashValueStr to string other than 'end'.")
 
 					lowHashValueStr match {
 
 						case "beginning" => {
+							println("Matched lowHashValueStr to 'beginning'.")
+
 							val highHashValue = highHashValueStr.toInt
 
 							for ((key, value) <- kvStore) {
@@ -338,7 +351,8 @@ object server extends App {
 						}
 
 						case _ => {
-
+							println("Matched lowHashValueStr to string other than 'beginning'.")
+							
 							val lowHashValue = lowHashValueStr.toInt
 							val highHashValue = highHashValueStr.toInt
 
