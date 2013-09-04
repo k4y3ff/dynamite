@@ -131,8 +131,7 @@ object server extends App {
 				terminalInput match {
 
 					case "connect" => {
-						// controllerAcceptor ! true // IS THIS PROBLEMATIC, BECAUSE THE ACTOR MAY ALREADY BE RUNNING?
-						controllerInputReader ! true // IS THIS PROBLEMATIC, BECAUSE THE ACTOR MAY ALREADY BE RUNNING?
+						controllerInputReader ! true
 						connectToDatabase()
 					}
 
